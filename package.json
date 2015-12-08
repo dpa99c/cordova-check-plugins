@@ -17,11 +17,11 @@
     "colors": "*",
     "jsonfile": "*",
     "minimist": "*",
-    "npmview": "*",
     "octonode": "*",
     "js-base64": "*",
     "underscore": "*",
     "cli-status": "*",
+    "cordova-lib": "*",
     "cordova-common": "*"
   }
 }

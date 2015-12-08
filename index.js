@@ -9,12 +9,12 @@ var path = require('path'),
     jsonfile = require('jsonfile'),
     exec = require('child_process').exec,
     minimist = require('minimist'),
-    npmview = require('npmview'),
     github = require('octonode'),
     Base64 = require('js-base64').Base64,
     _ = require('underscore'),
     semver = require('semver'),
     Spinner = require('cli-spinner').Spinner,
+    cordovaLib = require('cordova-lib'),
     cordovaCommon = require('cordova-common'),
     PluginInfoProvider = cordovaCommon.PluginInfoProvider,
     pluginInfoProvider = new PluginInfoProvider();
@@ -31,7 +31,6 @@ var PLUGINS_DIR = './plugins/',
  ******************/
 var verbose = false,
     cliArgs,
-    cliCommand,
     plugins = {},
     pluginCount,
     checkCount,
@@ -89,7 +88,8 @@ function checkRemoteVersions(){
 
 function checkRegistrySource(id, source){
     debug("Checking latest npm registry version for '"+id+"' using '"+source.id+"'");
-    npmview(source.id, function(err, version, moduleInfo) {
+
+    exec('npm view '+source.id+' version', function(err, stdout, stderr) {
         if(err){
             var msg = "Error checking npm registry for plugin '"+id+"'";
             plugins[id]['error'] = msg + ": "+ err;
@@ -98,9 +98,32 @@ function checkRegistrySource(id, source){
             checkedRemoteVersion(); // continue
             return -1;
         }
+        var version;
+        if(stdout.match('@')){
+            var versions = stdout.split('\n');
+            versions.pop();
+            version = versions.pop().match(/@([\d.]+)/)[1];
+        }else{
+            version = stdout;
+        }
         plugins[id]['remote'] = version;
         checkedRemoteVersion();
+
     });
+
+    /*npmview(source.id, function(err, version, moduleInfo) {
+        if(err){
+            var msg = "Error checking npm registry for plugin '"+id+"'";
+            plugins[id]['error'] = msg + ": "+ err;
+            msg += "\n\n" + err;
+            console.error(msg.red);
+            checkedRemoteVersion(); // continue
+            return -1;
+        }
+        dump(moduleInfo);
+        plugins[id]['remote'] = version;
+        checkedRemoteVersion();
+    });*/
 }
 
 function checkGitSource(id, source){
@@ -165,7 +188,7 @@ function displayResults(){
         return plugin.status == "newer-remote";
     });
     if(outdated.length > 0){
-        console.log(getTitle("Plugin updates available").green);
+        console.log(getTitle("Plugin update available").green);
         outdated.forEach(function(plugin){
             console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).green);
         });
@@ -175,10 +198,10 @@ function displayResults(){
     // newer local/unknown mismatch
     var newer = _.filter(plugins, function(plugin, id){
         plugin.id = id;
-        return plugin.status == "newer-local";
+        return plugin.status == "newer-installed";
     });
     if(newer.length > 0){
-        console.log(getTitle("Installed plugins version newer than remote").yellow);
+        console.log(getTitle("Installed plugin version newer than remote").yellow);
         newer.forEach(function(plugin){
             console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).yellow);
         });
@@ -190,7 +213,7 @@ function displayResults(){
         return plugin.status == "unknown-mismatch";
     });
     if(unknown.length > 0){
-        console.log(getTitle("Unknown plugin version mismatches").orange);
+        console.log(getTitle("Unknown plugin version mismatch").orange);
         unknown.forEach(function(plugin){
             console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).orange);
         });
@@ -202,7 +225,7 @@ function displayResults(){
         return plugin.status == "error";
     });
     if(error.length > 0){
-        console.log(getTitle("Error checking plugin versions").red);
+        console.log(getTitle("Error checking plugin version").red);
         error.forEach(function(plugin){
             console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote, plugin.error).red);
         });
