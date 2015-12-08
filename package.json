@@ -1,0 +1,26 @@
+{
+  "name": "cordova-check-plugins",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "preferGlobal": true,
+  "bin": {
+    "cordova-check-plugins": "index.js"
+  },
+  "dependencies": {
+    "fs-extra": "*",
+    "colors": "*",
+    "jsonfile": "*",
+    "minimist": "*",
+    "npmview": "*",
+    "octonode": "*",
+    "js-base64": "*",
+    "underscore": "*",
+    "cli-status": "*"
+  }
+}
