@@ -14,12 +14,17 @@ var path = require('path'),
     Base64 = require('js-base64').Base64,
     _ = require('underscore'),
     semver = require('semver'),
-    Spinner = require('cli-spinner').Spinner;
+    Spinner = require('cli-spinner').Spinner,
+    cordovaCommon = require('cordova-common'),
+    PluginInfoProvider = cordovaCommon.PluginInfoProvider,
+    pluginInfoProvider = new PluginInfoProvider();
 
 /***********
  * Constants
  ***********/
-var FETCH_FILE = './plugins/fetch.json';
+var PLUGINS_DIR = './plugins/',
+    FETCH_FILE = PLUGINS_DIR + 'fetch.json';
+
 
 /******************
  * Global variables
@@ -34,6 +39,7 @@ var verbose = false,
     spinner;
 
 function readJson(){
+
     debug("Finding installed plugins");
     startProgress("Checking local versions");
     jsonfile.readFile(FETCH_FILE, function(err, json){
@@ -49,54 +55,17 @@ function readJson(){
             plugins[id] = {source: plugin['source']};
             pluginCount++;
         }
-        resolveCliCommand();
+        getCurrentVersions();
     })
-}
-
-function resolveCliCommand(){
-    function resolveCordova(){
-        exec('cordova -v', function(err, stdout, stderr) {
-            if(err){
-                debug("cordova command not found - checking for phonegap");
-                resolvePhonegap();
-            }else{
-                cliCommand = 'cordova';
-                getCurrentVersions();
-            }
-        });
-    }
-    function resolvePhonegap(){
-        exec('phonegap -v', function(err, stdout, stderr) {
-            if(err){
-                var msg = "Error listing installed plugins - ensure you have cordova or phonegap CLI npm module installed either locally in your project folder or globally.\n\n"+err;
-                console.error(msg.red);
-                return -1;
-            }else{
-                cliCommand = 'phonegap';
-                getCurrentVersions();
-            }
-        });
-    }
-    resolveCordova();
 }
 
 function getCurrentVersions(){
     debug("Reading installed plugin versions");
-    exec(cliCommand+' plugin ls', function(err, stdout, stderr) {
-        if(err){
-            var msg = "Error listing installed plugins - ensure that you're running this command from the root of a Cordova project\n\n"+err;
-            console.error(msg.red);
-            return -1;
-        }
-        stdout = stdout.replace("\r", '');
-        var pluginLines = stdout.split('\n');
-        pluginLines.forEach(function(pluginLine){
-            if(!pluginLine) return;
-            var parts = pluginLine.split(' ');
-            plugins[parts[0]]['installed'] = parts[1];
-        });
-        checkRemoteVersions();
+    var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(PLUGINS_DIR);
+    installedPlugins.forEach(function(plugin){
+        plugins[plugin.id]['installed'] = plugin.version;
     });
+    checkRemoteVersions();
 }
 
 function checkRemoteVersions(){
@@ -315,7 +284,7 @@ function dump(obj){
 // Main
 function run(){
     // Setup
-    cliArgs = require('minimist')(process.argv.slice(2));
+    cliArgs = minimist(process.argv.slice(2));
     if(cliArgs["verbose"]){
         verbose = true;
         debug("Verbose output enabled".cyan);

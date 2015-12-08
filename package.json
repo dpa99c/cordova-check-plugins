@@ -21,6 +21,7 @@
     "octonode": "*",
     "js-base64": "*",
     "underscore": "*",
-    "cli-status": "*"
+    "cli-status": "*",
+    "cordova-common": "*"
   }
 }
