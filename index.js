@@ -30,12 +30,14 @@ var PLUGINS_DIR = './plugins/',
  * Global variables
  ******************/
 var verbose = false,
+    updateMode,
     cliArgs,
     plugins = {},
     pluginCount,
     checkCount,
     ghClient,
-    spinner;
+    spinner,
+    spinning = false;
 
 function readJson(){
 
@@ -110,20 +112,6 @@ function checkRegistrySource(id, source){
         checkedRemoteVersion();
 
     });
-
-    /*npmview(source.id, function(err, version, moduleInfo) {
-        if(err){
-            var msg = "Error checking npm registry for plugin '"+id+"'";
-            plugins[id]['error'] = msg + ": "+ err;
-            msg += "\n\n" + err;
-            console.error(msg.red);
-            checkedRemoteVersion(); // continue
-            return -1;
-        }
-        dump(moduleInfo);
-        plugins[id]['remote'] = version;
-        checkedRemoteVersion();
-    });*/
 }
 
 function checkGitSource(id, source){
@@ -242,6 +230,14 @@ function displayResults(){
             console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).cyan);
         });
     }
+
+    if(outdated.length > 0){
+        if(updateMode == "auto"){
+            updateAll(outdated);
+        }else if(updateMode == "interactive"){
+            updateInteractive(outdated);
+        }
+    }
 }
 
 function getTitle(msg){
@@ -286,16 +282,104 @@ function getPluginSnippet(id, source, installedVersion, remoteVersion, error){
 function startProgress(msg){
     spinner = new Spinner(msg+'... %s');
     spinner.start();
+    spinning = true;
 }
 
 function endProgress(){
-    spinner.stop(true);
+    spinner.stop();
+    spinning = false;
+}
+
+/*
+ * Updates
+ */
+
+function resolveCliCommand(cb){
+    function resolveCordova(){
+        exec('cordova -v', function(err, stdout, stderr) {
+            if(err){
+                debug("cordova command not found - checking for phonegap");
+                resolvePhonegap();
+            }else{
+                cb('cordova');
+            }
+        });
+    }
+    function resolvePhonegap(){
+        exec('phonegap -v', function(err, stdout, stderr) {
+            if(err){
+                var msg = "Error listing installed plugins - ensure you have cordova or phonegap CLI npm module installed either locally in your project folder or globally.\n\n"+err;
+                console.error(msg.red);
+                return -1;
+            }else{
+                cb('phonegap');
+            }
+        });
+    }
+    resolveCordova();
+}
+
+function updatePlugin(plugin, success){
+    var cliCommand;
+    startProgress("Updating '"+plugin.id+"'");
+    function remove(){
+        exec(cliCommand+' plugin rm '+plugin.id, function(err, stdout, stderr) {
+            if(err){
+                var msg = "Error checking npm registry for plugin '"+id+"'" + "\n\n" + err;
+                console.error(msg.red);
+                return -1;
+            }
+            debug("Removed plugin '"+plugin.id+"'");
+            add();
+        });
+    }
+    function add(){
+        var pluginSource;
+        if(plugin.source.type == "git"){
+            pluginSource = plugin.source.url;
+            if(plugin.source.ref){
+                pluginSource += '#'+plugin.source.ref;
+            }
+        }else{
+            pluginSource = plugin.source.id;
+        }
+        exec(cliCommand+' plugin add '+pluginSource, function(err, stdout, stderr) {
+            if(err){
+                var msg = "Error checking npm registry for plugin '"+id+"'" + "\n\n" + err;
+                console.error(msg.red);
+                return -1;
+            }
+            debug("Re-added plugin '"+plugin.id+"'");
+            success(plugin);
+            endProgress();
+        });
+    }
+
+    resolveCliCommand(function(command){
+        cliCommand =  command;
+        remove();
+    });
+}
+
+function updateAll(plugins){
+    plugins.forEach(function(plugin){
+        updatePlugin(plugin, updatedPlugin);
+    })
+}
+
+function updatedPlugin(plugin){
+    debug("Updated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.remote);
+}
+
+function updateInteractive(plugins){
+
 }
 
 
 // Dev
 function debug(msg){
     if(!verbose) return;
+    if(spinning) msg = '\n'+msg;
     console.log(msg);
 }
 
@@ -311,6 +395,11 @@ function run(){
     if(cliArgs["verbose"]){
         verbose = true;
         debug("Verbose output enabled".cyan);
+    }
+    if(cliArgs["update"]){
+        updateMode = cliArgs["update"];
+    }else{
+        updateMode = "none";
     }
     Spinner.setDefaultSpinnerString('|/-\\');
     // Start
