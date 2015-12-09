@@ -14,10 +14,10 @@ var path = require('path'),
     _ = require('underscore'),
     semver = require('semver'),
     Spinner = require('cli-spinner').Spinner,
-    cordovaLib = require('cordova-lib'),
     cordovaCommon = require('cordova-common'),
     PluginInfoProvider = cordovaCommon.PluginInfoProvider,
-    pluginInfoProvider = new PluginInfoProvider();
+    pluginInfoProvider = new PluginInfoProvider(),
+    inquirer = require('inquirer');
 
 /***********
  * Constants
@@ -100,6 +100,7 @@ function checkRegistrySource(id, source){
             checkedRemoteVersion(); // continue
             return -1;
         }
+        debug("Retrieved latest npm registry version for '"+id);
         var version;
         if(stdout.match('@')){
             var versions = stdout.split('\n');
@@ -108,7 +109,7 @@ function checkRegistrySource(id, source){
         }else{
             version = stdout;
         }
-        plugins[id]['remote'] = version;
+        plugins[id]['remote'] = version.replace('\n','');
         checkedRemoteVersion();
 
     });
@@ -134,10 +135,11 @@ function checkGitSource(id, source){
             checkedRemoteVersion(); // continue
             return -1;
         }
+        debug("Retrieved latest github version for '"+id);
         var content = Base64.decode(data.content),
             json = JSON.parse(content),
             version = json.version;
-        plugins[id]['remote'] = version;
+        plugins[id]['remote'] = version.replace('\n','');
         checkedRemoteVersion();
     });
 }
@@ -233,7 +235,9 @@ function displayResults(){
 
     if(outdated.length > 0){
         if(updateMode == "auto"){
-            updateAll(outdated);
+            updateAll(outdated, function(){
+                console.log("Automatically updated all outdated plugins");
+            });
         }else if(updateMode == "interactive"){
             updateInteractive(outdated);
         }
@@ -350,8 +354,8 @@ function updatePlugin(plugin, success){
                 return -1;
             }
             debug("Re-added plugin '"+plugin.id+"'");
-            success(plugin);
             endProgress();
+            success(plugin);
         });
     }
 
@@ -361,10 +365,26 @@ function updatePlugin(plugin, success){
     });
 }
 
-function updateAll(plugins){
+function updateAll(plugins, cb){
+    var pluginIds = [];
     plugins.forEach(function(plugin){
-        updatePlugin(plugin, updatedPlugin);
-    })
+        pluginIds.push(plugin.id);
+        total = pluginIds.length;
+    });
+    debug("Updating all plugins: "+pluginIds.join(", "));
+
+    function nextPlugin(){
+        if(plugins.length == 0){
+            cb();
+            return;
+        }
+        var plugin = plugins.pop();
+        updatePlugin(plugin, function(){
+            updatedPlugin(plugin);
+            nextPlugin();
+        });
+    }
+    nextPlugin();
 }
 
 function updatedPlugin(plugin){
@@ -372,15 +392,71 @@ function updatedPlugin(plugin){
 }
 
 function updateInteractive(plugins){
+    function finished(){
+        debug("Interactive update complete");
+    }
+    function nextPlugin(){
+        if(plugins.length == 0){
+            finished();
+            return;
+        }
 
+        var plugin = plugins.pop();
+        inquirer.prompt([
+            {
+                type: "expand",
+                message: "Update '"+plugin.id+"'? ",
+                name: "choice",
+                choices: [
+                    {
+                        key: "y",
+                        name: "Yes",
+                        value: "yes"
+                    },
+                    {
+                        key: "n",
+                        name: "No",
+                        value: "no"
+                    },
+                    {
+                        key: "a",
+                        name: "All",
+                        value: "all"
+                    },
+                    new inquirer.Separator(),
+                    {
+                        key: "x",
+                        name: "Abort",
+                        value: "abort"
+                    }
+                ]
+            }
+        ], function(answer){
+            switch(answer.choice){
+                case "yes":
+                    updatePlugin(plugin, nextPlugin);
+                    break;
+                case "no":
+                    nextPlugin();
+                    break;
+                case "all":
+                    plugins.push(plugin);
+                    updateAll(plugins, finished);
+                    break;
+                case "abort":
+                    finished();
+                    break;
+            }
+        });
+    }
+    nextPlugin();
 }
-
 
 // Dev
 function debug(msg){
     if(!verbose) return;
     if(spinning) msg = '\n'+msg;
-    console.log(msg);
+    console.log(msg.cyan);
 }
 
 function dump(obj){
@@ -394,7 +470,7 @@ function run(){
     cliArgs = minimist(process.argv.slice(2));
     if(cliArgs["verbose"]){
         verbose = true;
-        debug("Verbose output enabled".cyan);
+        debug("Verbose output enabled");
     }
     if(cliArgs["update"]){
         updateMode = cliArgs["update"];

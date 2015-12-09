@@ -21,7 +21,7 @@
     "js-base64": "*",
     "underscore": "*",
     "cli-status": "*",
-    "cordova-lib": "*",
-    "cordova-common": "*"
+    "cordova-common": "*",
+    "inquirer": "*"
   }
 }
