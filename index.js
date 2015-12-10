@@ -25,7 +25,6 @@ var path = require('path'),
 var PLUGINS_DIR = './plugins/',
     FETCH_FILE = PLUGINS_DIR + 'fetch.json';
 
-
 /******************
  * Global variables
  ******************/
@@ -297,7 +296,6 @@ function endProgress(){
 /*
  * Updates
  */
-
 function resolveCliCommand(cb){
     function resolveCordova(){
         exec('cordova -v', function(err, stdout, stderr) {
