@@ -7,6 +7,8 @@ A CLI tool to check for updates / manage updating plugins in Cordova/Phonegap pr
 
 This tool intends to provide a convenient way to check if the plugins contained within a Cordova project are up-to-date with their remote source and to optionally update them, either automatically or interactively.
 
+[![CLI screenshot](https://raw.githubusercontent.com/dpa99c/cordova-check-plugins/master/screenshot/1.thumb.jpg)](https://raw.githubusercontent.com/dpa99c/cordova-check-plugins/master/screenshot/1.jpg)
+
 # Supported plugin sources
 
 Plugins sourced via the npm registry (with optionally specified versions) or directly from GitHub repos (with optionally specified branches/tags) are supported.
@@ -33,7 +35,7 @@ Once `cordova-check-plugins` is installed globally, it can be run from the root 
 By default, it will display lists of plugins under the following categories:
 
 - "Plugin update available" - installed plugins for which a new remote version is available (displayed in green)
-- "Installed plugin version newer than remote" - installed plugins for which the local version is newer than the detected remote version (displayed in yellow)
+- "Installed plugin version newer than remote default" - installed plugins for which the local version is newer than the default remote version (displayed in yellow)
 - "Unknown plugin version mismatch" - installed plugins for which the remote version could not be determined as older/newer (displayed in orange)
 - "Error checking plugin version" - installed plugins for which an error occurred while checking the plugin versions (displayed in red)
 - "Up-to-date plugins" - (only if [--verbose](#--verbose) is specified) installed plugins which are up-to-date with the detected remote version (displayed in cyan)
