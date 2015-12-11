@@ -190,7 +190,7 @@ function displayResults(){
         return plugin.status == "newer-installed";
     });
     if(newer.length > 0){
-        console.log(getTitle("Installed plugin version newer than remote").yellow);
+        console.log(getTitle("Installed plugin version newer than remote default").yellow);
         newer.forEach(function(plugin){
             console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).yellow);
         });
@@ -235,7 +235,7 @@ function displayResults(){
     if(outdated.length > 0){
         if(updateMode == "auto"){
             updateAll(outdated, function(){
-                console.log("Automatically updated all outdated plugins");
+                console.log("\nAutomatically updated all outdated plugins".green);
             });
         }else if(updateMode == "interactive"){
             updateInteractive(outdated);
@@ -289,7 +289,7 @@ function startProgress(msg){
 }
 
 function endProgress(){
-    spinner.stop();
+    spinner.stop(true);
     spinning = false;
 }
 
@@ -386,12 +386,12 @@ function updateAll(plugins, cb){
 }
 
 function updatedPlugin(plugin){
-    debug("Updated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.remote);
+    console.log("\nUpdated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.remote);
 }
 
 function updateInteractive(plugins){
     function finished(){
-        debug("Interactive update complete");
+        console.log("\nInteractive update complete".green);
     }
     function nextPlugin(){
         if(plugins.length == 0){
