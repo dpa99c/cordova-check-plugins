@@ -17,7 +17,8 @@ var path = require('path'),
     cordovaCommon = require('cordova-common'),
     PluginInfoProvider = cordovaCommon.PluginInfoProvider,
     pluginInfoProvider = new PluginInfoProvider(),
-    inquirer = require('inquirer');
+    inquirer = require('inquirer'),
+    xml2js = require('xml2js').parseString;
 
 /***********
  * Constants
@@ -45,7 +46,7 @@ function readJson(){
     jsonfile.readFile(FETCH_FILE, function(err, json){
 
         if(err){
-            var msg = "Error reading plugins/fetch.json - ensure you're running this command from the root of a Cordova project\n\n"+err;
+            var msg = "Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project\n\n"+err;
             console.error(msg.red);
             return -1;
         }
@@ -62,6 +63,7 @@ function readJson(){
 function getCurrentVersions(){
     debug("Reading installed plugin versions");
     var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(PLUGINS_DIR);
+
     installedPlugins.forEach(function(plugin){
         plugins[plugin.id]['installed'] = plugin.version;
     });
@@ -92,7 +94,7 @@ function checkRegistrySource(id, source){
 
     exec('npm view '+source.id+' version', function(err, stdout, stderr) {
         if(err){
-            var msg = "Error checking npm registry for plugin '"+id+"'";
+            var msg = "Failed to check npm registry for plugin '"+id+"'";
             plugins[id]['error'] = msg + ": "+ err;
             msg += "\n\n" + err;
             console.error(msg.red);
@@ -124,22 +126,35 @@ function checkGitSource(id, source){
         ref = source.ref,
         ghrepo = ghClient.repo(user+'/'+repo);
 
+
+    function handleError(err){
+        var msg = "Failed to read version from github repo for plugin '"+id+"'";
+        plugins[id]['error'] = msg + ": "+ err;
+        msg += "\n\n" + err;
+        console.error(msg.red);
+        checkedRemoteVersion(); // continue
+    }
+
     debug("Checking latest github version for '"+id+"' using '"+source.url+"'");
-    ghrepo.contents('package.json', ref, function(err, data){
+    ghrepo.contents('plugin.xml', ref, function(err, data){
         if(err){
-            var msg = "Error reading version from github repo for plugin '"+id+"'";
-            plugins[id]['error'] = msg + ": "+ err;
-            msg += "\n\n" + err;
-            console.error(msg.red);
-            checkedRemoteVersion(); // continue
-            return -1;
+            if(err.toString().match("Not Found")){
+                err = "plugin.xml not found - make sure the specified repo contains a Cordova plugin";
+            }
+            handleError(err);
+            return;
         }
         debug("Retrieved latest github version for '"+id);
-        var content = Base64.decode(data.content),
-            json = JSON.parse(content),
-            version = json.version;
-        plugins[id]['remote'] = version.replace('\n','');
-        checkedRemoteVersion();
+        var xml = Base64.decode(data.content);
+
+        xml2js(xml, function(err, js){
+            if(err){
+                handleError(err);
+                return;
+            }
+            plugins[id]['remote'] = js.plugin.$.version;
+            checkedRemoteVersion();
+        });
     });
 }
 
@@ -271,6 +286,13 @@ function getPluginSnippet(id, source, installedVersion, remoteVersion, error){
     }
     installedVersion = installedVersion ? installedVersion : "UNKNOWN";
     remoteVersion = remoteVersion ? remoteVersion : "UNKNOWN";
+
+    if(installedVersion == "UNKNOWN" && remoteVersion != "UNKNOWN"){
+        installedVersion += " - check plugins/fetch.json for orphaned entries";
+    }else if(remoteVersion == "UNKNOWN" && installedVersion != "UNKNOWN"){
+        installedVersion += " - check remote source is valid";
+    }
+
     var snippet =  "plugin: "+id+
             "\nsource: "+source+
             "\ninstalled version: "+installedVersion+
@@ -310,7 +332,7 @@ function resolveCliCommand(cb){
     function resolvePhonegap(){
         exec('phonegap -v', function(err, stdout, stderr) {
             if(err){
-                var msg = "Error listing installed plugins - ensure you have cordova or phonegap CLI npm module installed either locally in your project folder or globally.\n\n"+err;
+                var msg = "Failed to find cordova or phonegap CLI command when listing installed plugins - ensure you have cordova/phonegap npm module installed either locally in your project folder or globally.\n\n"+err;
                 console.error(msg.red);
                 return -1;
             }else{
