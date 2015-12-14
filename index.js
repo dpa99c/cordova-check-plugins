@@ -349,7 +349,7 @@ function updatePlugin(plugin, success){
     function remove(){
         exec(cliCommand+' plugin rm '+plugin.id, function(err, stdout, stderr) {
             if(err){
-                var msg = "Error checking npm registry for plugin '"+id+"'" + "\n\n" + err;
+                var msg = "Error checking npm registry for plugin '"+plugin.id+"'" + "\n\n" + err;
                 console.error(msg.red);
                 return -1;
             }
@@ -369,7 +369,7 @@ function updatePlugin(plugin, success){
         }
         exec(cliCommand+' plugin add '+pluginSource, function(err, stdout, stderr) {
             if(err){
-                var msg = "Error checking npm registry for plugin '"+id+"'" + "\n\n" + err;
+                var msg = "Error checking npm registry for plugin '"+plugin.id+"'" + "\n\n" + err;
                 console.error(msg.red);
                 return -1;
             }
