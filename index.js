@@ -84,7 +84,8 @@ function checkRemoteVersions(){
         }else{
             var msg = "Plugin '"+id+"' has source.type='"+plugin.source.type+"' which is currently not supported";
             plugin.error = msg;
-            console.error(msg);
+            console.log(msg.yellow);
+            checkedRemoteVersion(); // continue
         }
     }
 }
@@ -217,9 +218,9 @@ function displayResults(){
         return plugin.status == "unknown-mismatch";
     });
     if(unknown.length > 0){
-        console.log(getTitle("Unknown plugin version mismatch").orange);
+        console.log(getTitle("Unknown plugin version mismatch").yellow);
         unknown.forEach(function(plugin){
-            console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).orange);
+            console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).yellow);
         });
     }
 
@@ -249,8 +250,13 @@ function displayResults(){
 
     if(outdated.length > 0){
         if(updateMode == "auto"){
-            updateAll(outdated, function(){
-                console.log("\nAutomatically updated all outdated plugins".green);
+            updateAll(outdated, function(success){
+                if(success){
+                    console.log("\nAutomatically updated all outdated plugins".green);
+                }else{
+                    console.log("\nFailed to update some outdated plugins".yellow);
+                }
+
             });
         }else if(updateMode == "interactive"){
             updateInteractive(outdated);
@@ -343,15 +349,21 @@ function resolveCliCommand(cb){
     resolveCordova();
 }
 
-function updatePlugin(plugin, success){
+function updatePlugin(plugin, complete){
     var cliCommand;
+    console.log("\n");
     startProgress("Updating '"+plugin.id+"'");
+    function finish(result){
+        endProgress();
+        complete(result);
+    }
     function remove(){
         exec(cliCommand+' plugin rm '+plugin.id, function(err, stdout, stderr) {
             if(err){
-                var msg = "Error checking npm registry for plugin '"+plugin.id+"'" + "\n\n" + err;
+                var msg = "\nError removing plugin '"+plugin.id+"'" + "\n\n" + err;
                 console.error(msg.red);
-                return -1;
+                finish(-1);
+                return;
             }
             debug("Removed plugin '"+plugin.id+"'");
             add();
@@ -369,13 +381,13 @@ function updatePlugin(plugin, success){
         }
         exec(cliCommand+' plugin add '+pluginSource, function(err, stdout, stderr) {
             if(err){
-                var msg = "Error checking npm registry for plugin '"+plugin.id+"'" + "\n\n" + err;
+                var msg = "\nError adding plugin '"+plugin.id+"'" + "\n\n" + err;
                 console.error(msg.red);
-                return -1;
+                finish(-1);
+                return;
             }
             debug("Re-added plugin '"+plugin.id+"'");
-            endProgress();
-            success(plugin);
+            finish(0);
         });
     }
 
@@ -393,22 +405,30 @@ function updateAll(plugins, cb){
     });
     debug("Updating all plugins: "+pluginIds.join(", "));
 
+    var success = true;
+
     function nextPlugin(){
         if(plugins.length == 0){
-            cb();
+            cb(success);
             return;
         }
         var plugin = plugins.pop();
-        updatePlugin(plugin, function(){
-            updatedPlugin(plugin);
+        updatePlugin(plugin, function(result){
+            updatedPlugin(plugin, result);
+            if(result == -1 && success) success = false;
             nextPlugin();
         });
     }
     nextPlugin();
 }
 
-function updatedPlugin(plugin){
-    console.log("\nUpdated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.remote);
+function updatedPlugin(plugin, result){
+    if(result == 0){
+        console.log("\nUpdated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.remote);
+    }else{
+        var msg = "Failed to update plugin '"+plugin.id+"'";
+        console.error(msg.red);
+    }
 }
 
 function updateInteractive(plugins){

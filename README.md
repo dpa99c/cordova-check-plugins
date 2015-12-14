@@ -36,7 +36,7 @@ By default, it will display lists of plugins under the following categories:
 
 - "Plugin update available" - installed plugins for which a new remote version is available (displayed in green)
 - "Installed plugin version newer than remote default" - installed plugins for which the local version is newer than the default remote version (displayed in yellow)
-- "Unknown plugin version mismatch" - installed plugins for which the remote version could not be determined as older/newer (displayed in orange)
+- "Unknown plugin version mismatch" - installed plugins for which the remote version could not be determined as older/newer (displayed in yellow)
 - "Error checking plugin version" - installed plugins for which an error occurred while checking the plugin versions (displayed in red)
 - "Up-to-date plugins" - (only if [--verbose](#--verbose) is specified) installed plugins which are up-to-date with the detected remote version (displayed in cyan)
 
