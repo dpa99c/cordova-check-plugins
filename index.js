@@ -3,28 +3,33 @@
 /**********
  * Modules
  **********/
-var path = require('path'),
-    fs = require('fs-extra'),
-    colors = require('colors'),
-    jsonfile = require('jsonfile'),
-    exec = require('child_process').exec,
-    minimist = require('minimist'),
-    github = require('octonode'),
-    Base64 = require('js-base64').Base64,
-    _ = require('underscore'),
-    semver = require('semver'),
-    Spinner = require('cli-spinner').Spinner,
-    cordovaCommon = require('cordova-common'),
-    PluginInfoProvider = cordovaCommon.PluginInfoProvider,
-    pluginInfoProvider = new PluginInfoProvider(),
-    inquirer = require('inquirer'),
-    xml2js = require('xml2js').parseString;
+try{
+    var path = require('path'),
+        fs = require('fs-extra'),
+        colors = require('colors'),
+        jsonfile = require('jsonfile'),
+        exec = require('child_process').exec,
+        minimist = require('minimist'),
+        github = require('octonode'),
+        Base64 = require('js-base64').Base64,
+        _ = require('underscore'),
+        semver = require('semver'),
+        Spinner = require('cli-spinner').Spinner,
+        cordovaCommon = require('cordova-common'),
+        PluginInfoProvider = cordovaCommon.PluginInfoProvider,
+        pluginInfoProvider = new PluginInfoProvider(),
+        inquirer = require('inquirer'),
+        xml2js = require('xml2js').parseString;
+}catch(e){
+    handleFatalException(e, "Failed to acquire module dependencies");
+}
 
 /***********
  * Constants
  ***********/
 var PLUGINS_DIR = './plugins/',
-    FETCH_FILE = PLUGINS_DIR + 'fetch.json';
+    FETCH_FILE = PLUGINS_DIR + 'fetch.json',
+    GITHUB_REGEX = /https:\/\/github.com\/([^\/]+)\/([^\/]+)$/;
 
 /******************
  * Global variables
@@ -41,13 +46,13 @@ var verbose = false,
 
 function readJson(){
 
-    debug("Finding installed plugins");
+    logger.debug("Finding installed plugins");
     startProgress("Checking local versions");
     jsonfile.readFile(FETCH_FILE, function(err, json){
 
         if(err){
-            var msg = "Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project\n\n"+err;
-            console.error(msg.red);
+            var msg = "FATAL ERROR: Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project\n\n"+err;
+            logger.error(msg);
             return -1;
         }
         pluginCount = 0;
@@ -61,7 +66,7 @@ function readJson(){
 }
 
 function getCurrentVersions(){
-    debug("Reading installed plugin versions");
+    logger.debug("Reading installed plugin versions");
     var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(PLUGINS_DIR);
 
     installedPlugins.forEach(function(plugin){
@@ -84,25 +89,25 @@ function checkRemoteVersions(){
         }else{
             var msg = "Plugin '"+id+"' has source.type='"+plugin.source.type+"' which is currently not supported";
             plugin.error = msg;
-            console.log(msg.yellow);
+            logger.log(msg.yellow);
             checkedRemoteVersion(); // continue
         }
     }
 }
 
 function checkRegistrySource(id, source){
-    debug("Checking latest npm registry version for '"+id+"' using '"+source.id+"'");
+    logger.debug("Checking latest npm registry version for '"+id+"' using '"+source.id+"'");
 
     exec('npm view '+source.id+' version', function(err, stdout, stderr) {
         if(err){
             var msg = "Failed to check npm registry for plugin '"+id+"'";
             plugins[id]['error'] = msg + ": "+ err;
             msg += "\n\n" + err;
-            console.error(msg.red);
+            logger.error(msg);
             checkedRemoteVersion(); // continue
             return -1;
         }
-        debug("Retrieved latest npm registry version for '"+id);
+        logger.debug("Retrieved latest npm registry version for '"+id);
         var version;
         if(stdout.match('@')){
             var versions = stdout.split('\n');
@@ -118,45 +123,49 @@ function checkRegistrySource(id, source){
 }
 
 function checkGitSource(id, source){
-    if(!ghClient){
-        ghClient = github.client();
-    }
-    var parts = source.url.match(/https:\/\/github.com\/([^\/]+)\/([^\/]+)$/),
-        user = parts[1],
-        repo = parts[2],
-        ref = source.ref,
-        ghrepo = ghClient.repo(user+'/'+repo);
-
-
     function handleError(err){
         var msg = "Failed to read version from github repo for plugin '"+id+"'";
         plugins[id]['error'] = msg + ": "+ err;
         msg += "\n\n" + err;
-        console.error(msg.red);
+        logger.error(msg);
         checkedRemoteVersion(); // continue
     }
 
-    debug("Checking latest github version for '"+id+"' using '"+source.url+"'");
-    ghrepo.contents('plugin.xml', ref, function(err, data){
-        if(err){
-            if(err.toString().match("Not Found")){
-                err = "plugin.xml not found - make sure the specified repo contains a Cordova plugin";
-            }
-            handleError(err);
-            return;
+    try{
+        if(!ghClient){
+            ghClient = github.client();
         }
-        debug("Retrieved latest github version for '"+id);
-        var xml = Base64.decode(data.content);
+        if(!source.url.match(GITHUB_REGEX)){
+            return handleError("source.url is not a valid github repo URL in the form 'https://github.com/username/reponame': " + source.url);
+        }
+        var parts = source.url.match(GITHUB_REGEX),
+            user = parts[1],
+            repo = parts[2],
+            ref = source.ref,
+            ghrepo = ghClient.repo(user+'/'+repo);
 
-        xml2js(xml, function(err, js){
+        logger.debug("Checking latest github version for '"+id+"' using '"+source.url+"'");
+        ghrepo.contents('plugin.xml', ref, function(err, data){
             if(err){
-                handleError(err);
-                return;
+                if(err.toString().match("Not Found")){
+                    err = "plugin.xml not found - make sure the specified repo contains a Cordova plugin";
+                }
+                return handleError(err);
             }
-            plugins[id]['remote'] = js.plugin.$.version;
-            checkedRemoteVersion();
+            logger.debug("Retrieved latest github version for '"+id);
+            var xml = Base64.decode(data.content);
+
+            xml2js(xml, function(err, js){
+                if(err){
+                    return handleError(err);
+                }
+                plugins[id]['remote'] = js.plugin.$.version;
+                checkedRemoteVersion();
+            });
         });
-    });
+    }catch(e){
+        handleError("exception occurred: "+e.message);
+    }
 }
 
 function checkedRemoteVersion(){
@@ -193,9 +202,9 @@ function displayResults(){
         return plugin.status == "newer-remote";
     });
     if(outdated.length > 0){
-        console.log(getTitle("Plugin update available").green);
+        logger.log(getTitle("Plugin update available").green);
         outdated.forEach(function(plugin){
-            console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).green);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).green);
         });
     }
 
@@ -206,9 +215,9 @@ function displayResults(){
         return plugin.status == "newer-installed";
     });
     if(newer.length > 0){
-        console.log(getTitle("Installed plugin version newer than remote default").yellow);
+        logger.log(getTitle("Installed plugin version newer than remote default").yellow);
         newer.forEach(function(plugin){
-            console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).yellow);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).yellow);
         });
     }
 
@@ -218,9 +227,9 @@ function displayResults(){
         return plugin.status == "unknown-mismatch";
     });
     if(unknown.length > 0){
-        console.log(getTitle("Unknown plugin version mismatch").yellow);
+        logger.log(getTitle("Unknown plugin version mismatch").yellow);
         unknown.forEach(function(plugin){
-            console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).yellow);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).yellow);
         });
     }
 
@@ -230,9 +239,9 @@ function displayResults(){
         return plugin.status == "error";
     });
     if(error.length > 0){
-        console.log(getTitle("Error checking plugin version").red);
+        logger.log(getTitle("Error checking plugin version").red);
         error.forEach(function(plugin){
-            console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote, plugin.error).red);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote, plugin.error).red);
         });
     }
 
@@ -242,9 +251,9 @@ function displayResults(){
         return plugin.status == "equal";
     });
     if(equal.length > 0 && verbose){
-        console.log(getTitle("Up-to-date plugins").cyan);
+        logger.log(getTitle("Up-to-date plugins").cyan);
         equal.forEach(function(plugin){
-            console.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).cyan);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).cyan);
         });
     }
 
@@ -252,9 +261,9 @@ function displayResults(){
         if(updateMode == "auto"){
             updateAll(outdated, function(success){
                 if(success){
-                    console.log("\nAutomatically updated all outdated plugins".green);
+                    logger.log("\nAutomatically updated all outdated plugins".green);
                 }else{
-                    console.log("\nFailed to update some outdated plugins".yellow);
+                    logger.log("\nFailed to update some outdated plugins".yellow);
                 }
 
             });
@@ -328,7 +337,7 @@ function resolveCliCommand(cb){
     function resolveCordova(){
         exec('cordova -v', function(err, stdout, stderr) {
             if(err){
-                debug("cordova command not found - checking for phonegap");
+                logger.debug("cordova command not found - checking for phonegap");
                 resolvePhonegap();
             }else{
                 cb('cordova');
@@ -338,8 +347,8 @@ function resolveCliCommand(cb){
     function resolvePhonegap(){
         exec('phonegap -v', function(err, stdout, stderr) {
             if(err){
-                var msg = "Failed to find cordova or phonegap CLI command when listing installed plugins - ensure you have cordova/phonegap npm module installed either locally in your project folder or globally.\n\n"+err;
-                console.error(msg.red);
+                var msg = "FATAL ERROR: Failed to find cordova or phonegap CLI command when listing installed plugins - ensure you have cordova/phonegap npm module installed either locally in your project folder or globally.\n\n"+err;
+                logger.error(msg);
                 return -1;
             }else{
                 cb('phonegap');
@@ -351,7 +360,7 @@ function resolveCliCommand(cb){
 
 function updatePlugin(plugin, complete){
     var cliCommand;
-    console.log("\n");
+    logger.log("\n");
     startProgress("Updating '"+plugin.id+"'");
     function finish(result){
         endProgress();
@@ -361,11 +370,11 @@ function updatePlugin(plugin, complete){
         exec(cliCommand+' plugin rm '+plugin.id, function(err, stdout, stderr) {
             if(err){
                 var msg = "\nError removing plugin '"+plugin.id+"'" + "\n\n" + err;
-                console.error(msg.red);
+                logger.error(msg);
                 finish(-1);
                 return;
             }
-            debug("Removed plugin '"+plugin.id+"'");
+            logger.debug("Removed plugin '"+plugin.id+"'");
             add();
         });
     }
@@ -382,11 +391,11 @@ function updatePlugin(plugin, complete){
         exec(cliCommand+' plugin add '+pluginSource, function(err, stdout, stderr) {
             if(err){
                 var msg = "\nError adding plugin '"+plugin.id+"'" + "\n\n" + err;
-                console.error(msg.red);
+                logger.error(msg);
                 finish(-1);
                 return;
             }
-            debug("Re-added plugin '"+plugin.id+"'");
+            logger.debug("Re-added plugin '"+plugin.id+"'");
             finish(0);
         });
     }
@@ -403,7 +412,7 @@ function updateAll(plugins, cb){
         pluginIds.push(plugin.id);
         total = pluginIds.length;
     });
-    debug("Updating all plugins: "+pluginIds.join(", "));
+    logger.debug("Updating all plugins: "+pluginIds.join(", "));
 
     var success = true;
 
@@ -424,16 +433,16 @@ function updateAll(plugins, cb){
 
 function updatedPlugin(plugin, result){
     if(result == 0){
-        console.log("\nUpdated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.remote);
+        logger.log("\nUpdated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.remote);
     }else{
         var msg = "Failed to update plugin '"+plugin.id+"'";
-        console.error(msg.red);
+        logger.error(msg);
     }
 }
 
 function updateInteractive(plugins){
     function finished(){
-        console.log("\nInteractive update complete".green);
+        logger.log("\nInteractive update complete".green);
     }
     function nextPlugin(){
         if(plugins.length == 0){
@@ -492,34 +501,67 @@ function updateInteractive(plugins){
     nextPlugin();
 }
 
-// Dev
-function debug(msg){
-    if(!verbose) return;
-    if(spinning) msg = '\n'+msg;
-    console.log(msg.cyan);
+/***********
+ * Logging
+ ***********/
+var logger = {
+    log: function(msg){
+        console.log(msg);
+    },
+    warn: function(msg){
+        console.warn(msg.yellow);
+    },
+    error: function(msg){
+        console.warn(msg.red);
+    },
+    debug: function(msg){
+        if(!verbose) return;
+        if(spinning) msg = '\n'+msg;
+        logger.log(msg.cyan);
+    },
+    dump: function (obj){
+        var util = require('util');
+        logger.log(util.inspect(obj));
+    }
+};
+
+
+/**************************
+ * Global exception handler
+ **************************/
+function handleFatalException(e, _msg){
+    var msg = "FATAL EXCEPTION: ";
+    if(_msg) msg += _msg + "; ";
+    msg += e.message;
+    logger.error(msg);
 }
 
-function dump(obj){
-    var util = require('util');
-    console.log(util.inspect(obj));
-}
-
-// Main
+/***********
+ * Main
+ ***********/
 function run(){
-    // Setup
-    cliArgs = minimist(process.argv.slice(2));
-    if(cliArgs["verbose"]){
-        verbose = true;
-        debug("Verbose output enabled");
+    try{
+        logger.log("Running cordova-check-plugins...")
+        // Setup
+        cliArgs = minimist(process.argv.slice(2));
+        if(cliArgs["verbose"]){
+            verbose = true;
+            logger.debug("Verbose output enabled");
+        }
+        if(cliArgs["update"]){
+            updateMode = cliArgs["update"];
+        }else{
+            updateMode = "none";
+        }
+        Spinner.setDefaultSpinnerString('|/-\\');
+        // Start
+        readJson();
+    }catch(e){
+        handleFatalException(e);
     }
-    if(cliArgs["update"]){
-        updateMode = cliArgs["update"];
-    }else{
-        updateMode = "none";
-    }
-    Spinner.setDefaultSpinnerString('|/-\\');
-    // Start
-    readJson();
 }
 
+/*******************
+ * Module invocation
+ *******************/
 run();
