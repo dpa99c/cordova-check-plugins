@@ -1,6 +1,6 @@
 {
   "name": "cordova-check-plugins",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A CLI tool to check for updates / manage updating Cordova plugins.",
   "main": "index.js",
   "author": "Dave Alden",
@@ -23,18 +23,18 @@
     "cordova-check-plugins": "index.js"
   },
   "dependencies": {
-    "fs-extra": "*",
-    "colors": "*",
-    "jsonfile": "*",
-    "minimist": "*",
-    "octonode": "*",
-    "js-base64": "*",
-    "underscore": "*",
-    "cli-status": "*",
-    "cli-spinner": "*",
-    "cordova-common": "*",
-    "inquirer": "*",
-    "xml2js": "*",
-    "semver": "*"
+    "fs-extra": "0.26.5",
+    "colors": "1.1.2",
+    "jsonfile": "2.2.3",
+    "minimist": "1.2.0",
+    "octonode": "0.7.4",
+    "js-base64": "2.1.9",
+    "underscore": "1.8.3",
+    "cli-status": "0.1.1",
+    "cli-spinner": "0.2.4",
+    "cordova-common": "1.0.0",
+    "inquirer": "0.12.0",
+    "xml2js": "0.4.16",
+    "semver": "5.1.0"
   }
 }
