@@ -180,16 +180,21 @@ function compareVersions(){
     var plugin;
     for(var id in plugins){
         plugin = plugins[id];
-        if(!plugin.installed || !plugin.remote){
+        try{
+            if(!plugin.installed || !plugin.remote){
+                plugin.status = "error";
+            }else if(plugin.installed ===  plugin.remote || semver.eq(plugin.installed, plugin.remote)){
+                plugin.status = "equal";
+            }else if(semver.lt(plugin.installed, plugin.remote)) {
+                plugin.status = "newer-remote";
+            }else if(semver.gt(plugin.installed, plugin.remote)) {
+                plugin.status = "newer-installed";
+            }else{
+                plugin.status = "unknown-mismatch";
+            }
+        }catch(e){
             plugin.status = "error";
-        }else if(semver.eq(plugin.installed, plugin.remote)){
-            plugin.status = "equal";
-        }else if(semver.lt(plugin.installed, plugin.remote)) {
-            plugin.status = "newer-remote";
-        }else if(semver.gt(plugin.installed, plugin.remote)) {
-            plugin.status = "newer-installed";
-        }else{
-            plugin.status = "unknown-mismatch";
+            plugin.error = "Error comparing versions: local version="+plugin.installed+"; remote version="+plugin.remote+"; version error="+ e.message;
         }
     }
     displayResults();
