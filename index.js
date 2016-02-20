@@ -111,8 +111,13 @@ function checkRegistrySource(id, source){
         var version;
         if(stdout.match('@')){
             var versions = stdout.split('\n');
-            versions.pop();
-            version = versions.pop().match(/@([\d.]+)/)[1];
+            while (versions.length) {
+                version = versions.pop();
+                if (version) {
+                    version = version.match(/@([\d.]+)/)[1];
+                    break;
+                }
+            }
         }else{
             version = stdout;
         }
