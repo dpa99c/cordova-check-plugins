@@ -69,8 +69,12 @@ function getCurrentVersions(){
     logger.debug("Reading installed plugin versions");
     var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(PLUGINS_DIR);
 
-    installedPlugins.forEach(function(plugin){
-        plugins[plugin.id]['installed'] = plugin.version;
+    installedPlugins.forEach(function(plugin){ 
+        if (plugins[plugin.id]) {
+            plugins[plugin.id]['installed'] = plugin.version;
+        } else {
+            logger.log('Plugin ' + plugin.id + ' not found');
+        }
     });
     checkRemoteVersions();
 }
