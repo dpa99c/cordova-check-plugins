@@ -49,19 +49,22 @@ function readJson(){
     logger.debug("Finding installed plugins");
     startProgress("Checking local versions");
     jsonfile.readFile(FETCH_FILE, function(err, json){
-
-        if(err){
-            var msg = "FATAL ERROR: Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project\n\n"+err;
-            logger.error(msg);
-            return -1;
+        try{
+            if(err){
+                var msg = "FATAL ERROR: Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project\n\n"+err;
+                logger.error(msg);
+                return -1;
+            }
+            pluginCount = 0;
+            for(var id in json){
+                var plugin = json[id];
+                plugins[id] = {source: plugin['source']};
+                pluginCount++;
+            }
+            getCurrentVersions();
+        }catch(e){
+            handleFatalException(e);
         }
-        pluginCount = 0;
-        for(var id in json){
-            var plugin = json[id];
-            plugins[id] = {source: plugin['source']};
-            pluginCount++;
-        }
-        getCurrentVersions();
     })
 }
 
@@ -70,7 +73,12 @@ function getCurrentVersions(){
     var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(PLUGINS_DIR);
 
     installedPlugins.forEach(function(plugin){
-        plugins[plugin.id]['installed'] = plugin.version;
+        if(plugins[plugin.id]){
+            plugins[plugin.id]['installed'] = plugin.version;
+        }else{
+            var msg = "Plugin '"+plugin.id+"' is present in /plugins folder but not in fetch.json";
+            logger.error(msg);
+        }
     });
     checkRemoteVersions();
 }
@@ -95,45 +103,56 @@ function checkRemoteVersions(){
     }
 }
 
+function handleRemoteVersionCheckError(id, msg, err){
+    msg += "for plugin '"+id+"'";
+    plugins[id]['error'] = msg;
+    if(err){
+        plugins[id]['error'] += ": "+ err;
+        msg += "\n\n" + err;
+    }
+    logger.error(msg);
+    checkedRemoteVersion(); // continue
+}
+
 function checkRegistrySource(id, source){
     logger.debug("Checking latest npm registry version for '"+id+"' using '"+source.id+"'");
 
     exec('npm view '+source.id+' version', function(err, stdout, stderr) {
-        if(err){
-            var msg = "Failed to check npm registry for plugin '"+id+"'";
-            plugins[id]['error'] = msg + ": "+ err;
-            msg += "\n\n" + err;
-            logger.error(msg);
-            checkedRemoteVersion(); // continue
-            return -1;
-        }
-        logger.debug("Retrieved latest npm registry version for '"+id);
-        var version;
-        if(stdout.match('@')){
-            var versions = stdout.split('\n');
-            while (versions.length) {
-                version = versions.pop();
-                if (version) {
-                    version = version.match(/@([\d.]+)/)[1];
-                    break;
-                }
+        try{
+            if(err){
+                handleRemoteVersionCheckError(id, "Failed to check npm registry", err);
+                return -1;
             }
-        }else{
-            version = stdout;
+            logger.debug("Retrieved latest npm registry version for '"+id);
+            var version;
+            logger.dump(stdout);
+            if(stdout.match('@')){
+                var versions = stdout.split('\n');
+                while (versions.length) {
+                    version = versions.pop() || "";
+                    version = version.match(/'([^']+)'/);
+                    if (version && version.length > 0 && version[1]) {
+                        version = version[1];
+                        break;
+                    }
+                }
+                if(!version){
+                    handleRemoteVersionCheckError(id, "Couldn't determine a remote registry version");
+                }
+            }else{
+                version = stdout;
+            }
+            plugins[id]['remote'] = version.replace('\n','');
+            checkedRemoteVersion();
+        }catch(e){
+            handleRemoteVersionCheckError(id, "Exception trying to retrieve remote registry version", err);
         }
-        plugins[id]['remote'] = version.replace('\n','');
-        checkedRemoteVersion();
-
     });
 }
 
 function checkGitSource(id, source){
     function handleError(err){
-        var msg = "Failed to read version from github repo for plugin '"+id+"'";
-        plugins[id]['error'] = msg + ": "+ err;
-        msg += "\n\n" + err;
-        logger.error(msg);
-        checkedRemoteVersion(); // continue
+        handleRemoteVersionCheckError(id, "Failed to read version from github repo", err);
     }
 
     try{
@@ -169,7 +188,7 @@ function checkGitSource(id, source){
             });
         });
     }catch(e){
-        handleError("exception occurred: "+e.message);
+        handleError("Exception occurred: "+e.message);
     }
 }
 
@@ -182,27 +201,31 @@ function checkedRemoteVersion(){
 }
 
 function compareVersions(){
-    var plugin;
-    for(var id in plugins){
-        plugin = plugins[id];
-        try{
-            if(!plugin.installed || !plugin.remote){
+    try{
+        var plugin;
+        for(var id in plugins){
+            plugin = plugins[id];
+            try{
+                if(!plugin.installed || !plugin.remote){
+                    plugin.status = "error";
+                }else if(plugin.installed ===  plugin.remote || semver.eq(plugin.installed, plugin.remote)){
+                    plugin.status = "equal";
+                }else if(semver.lt(plugin.installed, plugin.remote)) {
+                    plugin.status = "newer-remote";
+                }else if(semver.gt(plugin.installed, plugin.remote)) {
+                    plugin.status = "newer-installed";
+                }else{
+                    plugin.status = "unknown-mismatch";
+                }
+            }catch(e){
                 plugin.status = "error";
-            }else if(plugin.installed ===  plugin.remote || semver.eq(plugin.installed, plugin.remote)){
-                plugin.status = "equal";
-            }else if(semver.lt(plugin.installed, plugin.remote)) {
-                plugin.status = "newer-remote";
-            }else if(semver.gt(plugin.installed, plugin.remote)) {
-                plugin.status = "newer-installed";
-            }else{
-                plugin.status = "unknown-mismatch";
+                plugin.error = "Error comparing versions: local version="+plugin.installed+"; remote version="+plugin.remote+"; version error="+ e.message;
             }
-        }catch(e){
-            plugin.status = "error";
-            plugin.error = "Error comparing versions: local version="+plugin.installed+"; remote version="+plugin.remote+"; version error="+ e.message;
         }
-    }
     displayResults();
+    }catch(e){
+        handleFatalException(e);
+    }
 }
 
 function displayResults(){
@@ -357,9 +380,7 @@ function resolveCliCommand(cb){
     function resolvePhonegap(){
         exec('phonegap -v', function(err, stdout, stderr) {
             if(err){
-                var msg = "FATAL ERROR: Failed to find cordova or phonegap CLI command when listing installed plugins - ensure you have cordova/phonegap npm module installed either locally in your project folder or globally.\n\n"+err;
-                logger.error(msg);
-                return -1;
+                handleFatalError( "Failed to find cordova or phonegap CLI command when listing installed plugins - ensure you have cordova/phonegap npm module installed either locally in your project folder or globally.\n\n"+err);
             }else{
                 cb('phonegap');
             }
@@ -544,6 +565,13 @@ function handleFatalException(e, _msg){
     if(_msg) msg += _msg + "; ";
     msg += e.message;
     logger.error(msg);
+    process.exit(1); // exit on fatal error
+}
+
+function handleFatalError(msg){
+    var msg = "FATAL ERROR: " + msg
+    logger.error(msg);
+    process.exit(1); // exit on fatal error
 }
 
 /***********
