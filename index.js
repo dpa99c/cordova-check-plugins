@@ -126,7 +126,6 @@ function checkRegistrySource(id, source){
             }
             logger.debug("Retrieved latest npm registry version for '"+id);
             var version;
-            logger.dump(stdout);
             if(stdout.match('@')){
                 var versions = stdout.split('\n');
                 while (versions.length) {
