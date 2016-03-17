@@ -48,11 +48,14 @@ Plugins for which updates are available can optionally be updated either interac
 
 ### -v or --version
 
+    $ cordova-check-plugins -v
+    $ cordova-check-plugins --version
+
 Displays currently installed version of this module.
 
 ### --verbose
 
-Displays detailed log output and lists "Up-to-date plugins"
+Displays detailed log output.
 
     $ cordova-check-plugins --verbose
 
@@ -72,6 +75,8 @@ i.e.
     $ cordova-check-plugins --update=auto
 
 ### --unconstrain-versions
+
+    $ cordova-check-plugins --unconstrain-versions
 
 Unconstrains checking of remote version so the highest remote version will be displayed regardless of locally specified version.
 
