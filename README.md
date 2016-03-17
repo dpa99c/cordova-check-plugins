@@ -46,6 +46,10 @@ Plugins for which updates are available can optionally be updated either interac
 
 ## Command-line options
 
+## -v or --version
+
+Displays currently installed version of this module.
+
 ### --verbose
 
 Displays detailed log output and lists "Up-to-date plugins"
@@ -83,8 +87,8 @@ For example, let's say `cordova-plugin-foo` has remote versions `1.0.1`, `1.0.2`
 Calling `cordova-check-plugins --unconstrain-versions` will ignore the specified local version, so in the example above, all cases would return `2.0.0`.
 
 Note that this only option affects plugins whose source is npm.
-It will have no effect on plugins installed directly from git repos.
-This is because it's not possible to distinguish if git URLs contain a branch or a tag reference. Both are specified using `#`.
+It will have no effect on plugins installed directly from github repos.
+This is because it's not possible to distinguish if github URLs contain a branch or a tag reference. Both are specified using `#`.
 So it's not possible to distinguish a tag URL (e.g. `http://github.com/some/repo#r1.2.3`) from a branch URL (e.g. `http://github.com/some/repo#some_branch`).
 
 

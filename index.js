@@ -30,7 +30,8 @@ try{
  ***********/
 var PLUGINS_DIR = './plugins/',
     FETCH_FILE = PLUGINS_DIR + 'fetch.json',
-    GITHUB_REGEX = /https:\/\/github.com\/([^\/]+)\/([^\/]+)$/;
+    GITHUB_HTTPS_REGEX = /https:\/\/github\.com\/([^\/]+)\/([^\/]+)$/,
+    GITHUB_GIT_REGEX = /git:\/\/github\.com\/([^\/]+)\/([^\/.]+)(?:\.git)?/;
 
 /******************
  * Global variables
@@ -161,16 +162,19 @@ function checkGitSource(id, source){
         if(!ghClient){
             ghClient = github.client();
         }
-        if(!source.url.match(GITHUB_REGEX)){
-            return handleError("source.url is not a valid github repo URL in the form 'https://github.com/username/reponame': " + source.url);
+        if(source.url.match(GITHUB_GIT_REGEX)){
+            source.url = parseGitProtocolUrl(source.url);
         }
-        var parts = source.url.match(GITHUB_REGEX),
+        if(!source.url.match(GITHUB_HTTPS_REGEX)){
+            return handleError("source.url '"+source.url+"' is not a valid github repo URL in the form 'https://github.com/username/reponame' or 'git://github.com/username/reponame.git'");
+        }
+        var parts = source.url.match(GITHUB_HTTPS_REGEX),
             user = parts[1],
             repo = parts[2],
             ref = source.ref,
             ghrepo = ghClient.repo(user+'/'+repo);
 
-        logger.debug("Checking latest github version for '"+id+"' using '"+source.url+"'");
+        logger.debug("Checking latest github version for '"+id+"' using '"+source.url+(source.ref ? "#"+source.ref : "")+"'");
         ghrepo.contents('plugin.xml', ref, function(err, data){
             if(err){
                 if(err.toString().match("Not Found")){
@@ -192,6 +196,18 @@ function checkGitSource(id, source){
     }catch(e){
         handleError("Exception occurred: "+e.message);
     }
+}
+
+/**
+ * Parses a git URL in the form git://github.com/some/repo.git#r1.0.0 and returns it as https equivalent
+ * @param {string} gitUrl - URL using git:// protocol
+ * @return {string} equivalent URL using https:// protocol
+ */
+function parseGitProtocolUrl(gitUrl){
+    var parts = gitUrl.match(GITHUB_GIT_REGEX),
+        user = parts[1],
+        repo = parts[2];
+    return "https://github.com/"+user+"/"+repo;
 }
 
 function checkedRemoteVersion(){
@@ -581,9 +597,15 @@ function handleFatalError(msg){
  ***********/
 function run(){
     try{
-        logger.log("Running cordova-check-plugins...")
+        logger.debug("Running cordova-check-plugins...")
         // Setup
         cliArgs = minimist(process.argv.slice(2));
+
+        if(cliArgs["v"] || cliArgs["version"]){
+            logger.log(require('./package.json').version);
+            return;
+        }
+
         if(cliArgs["verbose"]){
             verbose = true;
             logger.debug("Verbose output enabled");
