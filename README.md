@@ -19,8 +19,10 @@ For example:
     cordova-plugin-geolocation@*
     cordova-plugin-whitelist@1
     cordova-plugin-file@4.0.0
+    cordova-plugin-inappbrowser@~1.1.1
     https://github.com/dpa99c/cordova-custom-config
     https://github.com/apache/cordova-plugin-battery-status#r1.0.0
+    git://github.com/apache/cordova-plugin-battery-status.git#r1.0.0
 
 # Installation
 
@@ -38,7 +40,7 @@ By default, it will display lists of plugins under the following categories:
 - "Installed plugin version newer than remote default" - installed plugins for which the local version is newer than the default remote version (displayed in yellow)
 - "Unknown plugin version mismatch" - installed plugins for which the remote version could not be determined as older/newer (displayed in yellow)
 - "Error checking plugin version" - installed plugins for which an error occurred while checking the plugin versions (displayed in red)
-- "Up-to-date plugins" - (only if [--verbose](#--verbose) is specified) installed plugins which are up-to-date with the detected remote version (displayed in cyan)
+- "Up-to-date plugins" - installed plugins which are up-to-date with the detected remote version (displayed in grey)
 
 Plugins for which updates are available can optionally be updated either interactively or automatically via the `--update` command-line option.
 
@@ -64,6 +66,27 @@ i.e.
         same as:  $ cordova-check-plugins
     $ cordova-check-plugins --update=interactive
     $ cordova-check-plugins --update=auto
+
+### --unconstrain-versions
+
+Unconstrains checking of remote version so the highest remote version will be displayed regardless of locally specified version.
+
+By default, if the version was specified when the plugin was installed, the specified version number will be used to constrain which remote versions are returned.
+
+For example, let's say `cordova-plugin-foo` has remote versions `1.0.1`, `1.0.2`, `1.1.0`, `2.0.0`:
+- If `cordova plugin install cordova-plugin-foo` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `2.0.0`
+- If `cordova plugin install cordova-plugin-foo@1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.1.0`
+- If `cordova plugin install cordova-plugin-foo@1.0` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.2`
+- If `cordova plugin install cordova-plugin-foo@1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.1`
+- If `cordova plugin install cordova-plugin-foo@~1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.2`
+
+Calling `cordova-check-plugins --unconstrain-versions` will ignore the specified local version, so in the example above, all cases would return `2.0.0`.
+
+Note that this only option affects plugins whose source is npm.
+It will have no effect on plugins installed directly from git repos.
+This is because it's not possible to distinguish if git URLs contain a branch or a tag reference. Both are specified using `#`.
+So it's not possible to distinguish a tag URL (e.g. `http://github.com/some/repo#r1.2.3`) from a branch URL (e.g. `http://github.com/some/repo#some_branch`).
+
 
 License
 ================

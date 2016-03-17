@@ -36,6 +36,7 @@ var PLUGINS_DIR = './plugins/',
  * Global variables
  ******************/
 var verbose = false,
+    unconstrainVersions = false,
     updateMode,
     cliArgs,
     plugins = {},
@@ -116,9 +117,10 @@ function handleRemoteVersionCheckError(id, msg, err){
 }
 
 function checkRegistrySource(id, source){
-    logger.debug("Checking latest npm registry version for '"+id+"' using '"+source.id+"'");
+    var idToCheck = unconstrainVersions ? source.id.replace(/(@.*)$/, '') : source.id;
+    logger.debug("Checking latest npm registry version for '"+id+"' using '"+idToCheck+"'");
 
-    exec('npm view '+source.id+' version', function(err, stdout, stderr) {
+    exec('npm view '+idToCheck+' version', function(err, stdout, stderr) {
         try{
             if(err){
                 handleRemoteVersionCheckError(id, "Failed to check npm registry", err);
@@ -283,10 +285,10 @@ function displayResults(){
         plugin.id = id;
         return plugin.status == "equal";
     });
-    if(equal.length > 0 && verbose){
-        logger.log(getTitle("Up-to-date plugins").cyan);
+    if(equal.length > 0){
+        logger.log(getTitle("Up-to-date plugins").grey);
         equal.forEach(function(plugin){
-            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).cyan);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).grey);
         });
     }
 
@@ -585,6 +587,10 @@ function run(){
         if(cliArgs["verbose"]){
             verbose = true;
             logger.debug("Verbose output enabled");
+        }
+        if(cliArgs["unconstrain-versions"]){
+            unconstrainVersions = true;
+            logger.debug("Unconstraining version checks: highest remote version will be displayed regardless of locally specified version");
         }
         if(cliArgs["update"]){
             updateMode = cliArgs["update"];
