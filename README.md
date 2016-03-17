@@ -46,7 +46,7 @@ Plugins for which updates are available can optionally be updated either interac
 
 ## Command-line options
 
-## -v or --version
+### -v or --version
 
 Displays currently installed version of this module.
 
