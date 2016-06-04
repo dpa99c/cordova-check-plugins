@@ -98,6 +98,8 @@ function checkRemoteVersions(){
             checkRegistrySource(id, plugin.source);
         }else if(plugin.source.type == "git"){
             checkGitSource(id, plugin.source);
+        }else if(plugin.source.type == "local"){
+            checkLocalSource(id, plugin.source);
         }else{
             var msg = "Plugin '"+id+"' has source.type='"+plugin.source.type+"' which is currently not supported";
             plugin.error = msg;
@@ -199,6 +201,31 @@ function checkGitSource(id, source){
                 plugins[id]['remote'] = js.plugin.$.version;
                 checkedRemoteVersion();
             });
+        });
+    }catch(e){
+        handleError("Exception occurred: "+e.message);
+    }
+}
+
+function checkLocalSource(id, source){
+    function handleError(err){
+        handleRemoteVersionCheckError(id, "Failed to read version from local source", err);
+    }
+
+    try{
+        var fileContents;
+        try{
+            fileContents = fs.readFileSync(source.path+"/plugin.xml", 'utf-8');
+        }catch(e){
+            return handleError("plugin.xml not found - make sure the specified local source contains a Cordova plugin");
+        }
+
+        xml2js(fileContents, function(err, js){
+            if(err){
+                return handleError(err);
+            }
+            plugins[id]['remote'] = js.plugin.$.version;
+            checkedRemoteVersion();
         });
     }catch(e){
         handleError("Exception occurred: "+e.message);
@@ -354,6 +381,8 @@ function getPluginSnippet(id, source, installedVersion, remoteVersion, error){
         source = source.url;
     }else if(source.type == "registry"){
         source = "npm://"+source.id;
+    }else if(source.type == "local"){
+        source = source.path;
     }else{
         source = "UNKNOWN";
     }
