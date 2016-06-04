@@ -19,7 +19,8 @@ try{
         PluginInfoProvider = cordovaCommon.PluginInfoProvider,
         pluginInfoProvider = new PluginInfoProvider(),
         inquirer = require('inquirer'),
-        xml2js = require('xml2js').parseString;
+        xml2js = require('xml2js').parseString,
+        plugman = require('plugman');
 }catch(e){
     handleFatalException(e, "Failed to acquire module dependencies");
 }
@@ -107,7 +108,7 @@ function checkRemoteVersions(){
 }
 
 function handleRemoteVersionCheckError(id, msg, err){
-    msg += "for plugin '"+id+"'";
+    msg += " for plugin '"+id+"'";
     plugins[id]['error'] = msg;
     if(err){
         plugins[id]['error'] += ": "+ err;
@@ -415,18 +416,41 @@ function updatePlugin(plugin, complete){
         endProgress();
         complete(result);
     }
+
+    function forceRemove(){
+        var platforms = _.filter(fs.readdirSync('platforms'), function (file) {
+            return fs.statSync(path.resolve('platforms', file)).isDirectory();
+        });
+        _.each(platforms, function (platform) {
+            plugman.raw.uninstall(platform, "platforms/"+platform, plugin.id, "plugins", {
+                www_dir: "www",
+                force: true
+            });
+        });
+        logger.debug("Forcibly removed plugin '"+plugin.id+"'");
+        add();
+    }
+
+
     function remove(){
         exec(cliCommand+' plugin rm '+plugin.id, function(err, stdout, stderr) {
             if(err){
                 var msg = "\nError removing plugin '"+plugin.id+"'" + "\n\n" + err;
-                logger.error(msg);
-                finish(-1);
-                return;
+                if(cliArgs["force-update"]){
+                    logger.debug(msg);
+                    forceRemove();
+                    return;
+                }else{
+                    logger.error(msg);
+                    finish(-1);
+                    return;
+                }
             }
             logger.debug("Removed plugin '"+plugin.id+"'");
             add();
         });
     }
+
     function add(){
         var pluginSource;
         if(plugin.source.type == "git"){
@@ -582,13 +606,13 @@ function handleFatalException(e, _msg){
     var msg = "FATAL EXCEPTION: ";
     if(_msg) msg += _msg + "; ";
     msg += e.message;
-    logger.error(msg);
+    logger ? logger.error(msg) : console.error(msg);
     process.exit(1); // exit on fatal error
 }
 
 function handleFatalError(msg){
-    var msg = "FATAL ERROR: " + msg
-    logger.error(msg);
+    var msg = "FATAL ERROR: " + msg;
+    logger ? logger.error(msg) : console.error(msg);
     process.exit(1); // exit on fatal error
 }
 
@@ -597,7 +621,8 @@ function handleFatalError(msg){
  ***********/
 function run(){
     try{
-        logger.debug("Running cordova-check-plugins...")
+        logger.debug("Running cordova-check-plugins...");
+
         // Setup
         cliArgs = minimist(process.argv.slice(2));
 

@@ -96,6 +96,15 @@ It will have no effect on plugins installed directly from github repos.
 This is because it's not possible to distinguish if github URLs contain a branch or a tag reference. Both are specified using `#`.
 So it's not possible to distinguish a tag URL (e.g. `http://github.com/some/repo#r1.2.3`) from a branch URL (e.g. `http://github.com/some/repo#some_branch`).
 
+### --force-update
+
+Forces the update of dependent plugins.
+By default, Cordova/Phonegap will not allow the removal of plugins on which other plugins are dependent, and therefore will not allow them to be updated.
+For example, `cordova-plugin-file-transfer` depends on `cordova-plugin-file`.
+By setting this option, both plugins will be updated (if updates are available).
+Without it, only the "parent" plugin - in this case `cordova-plugin-file-transfer` - will be updated.
+
+    $ cordova-check-plugins --update=auto --force-update
 
 License
 ================
