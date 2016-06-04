@@ -11,7 +11,9 @@ This tool intends to provide a convenient way to check if the plugins contained 
 
 # Supported plugin sources
 
-Plugins sourced via the npm registry (with optionally specified versions) or directly from GitHub repos (with optionally specified branches/tags) are supported.
+- Plugins installed via the npm registry (with optionally specified versions)
+- Plugins installed directly from GitHub repos (with optionally specified branches/tags)
+- Plugins installed from local sources (on the local machine)
 
 For example:
 
@@ -23,6 +25,7 @@ For example:
     https://github.com/dpa99c/cordova-custom-config
     https://github.com/apache/cordova-plugin-battery-status#r1.0.0
     git://github.com/apache/cordova-plugin-battery-status.git#r1.0.0
+    /some/local/path/to/a/plugin
 
 # Installation
 
@@ -37,7 +40,7 @@ Once `cordova-check-plugins` is installed globally, it can be run from the root 
 By default, it will display lists of plugins under the following categories:
 
 - "Plugin update available" - installed plugins for which a new remote version is available (displayed in green)
-- "Installed plugin version newer than remote default" - installed plugins for which the local version is newer than the default remote version (displayed in yellow)
+- "Installed plugin version newer than remote default" - installed plugins for which the installed version is newer than the default remote version (displayed in yellow)
 - "Unknown plugin version mismatch" - installed plugins for which the remote version could not be determined as older/newer (displayed in yellow)
 - "Error checking plugin version" - installed plugins for which an error occurred while checking the plugin versions (displayed in red)
 - "Up-to-date plugins" - installed plugins which are up-to-date with the detected remote version (displayed in grey)
@@ -85,7 +88,7 @@ i.e.
 
     $ cordova-check-plugins --unconstrain-versions
 
-Unconstrains checking of remote version so the highest remote version will be displayed regardless of locally specified version.
+Unconstrains checking of remote version so the highest remote version will be displayed regardless of specified version.
 
 By default, if the version was specified when the plugin was installed, the specified version number will be used to constrain which remote versions are returned.
 
@@ -96,7 +99,7 @@ For example, let's say `cordova-plugin-foo` has remote versions `1.0.1`, `1.0.2`
 - If `cordova plugin install cordova-plugin-foo@1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.1`
 - If `cordova plugin install cordova-plugin-foo@~1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.2`
 
-Calling `cordova-check-plugins --unconstrain-versions` will ignore the specified local version, so in the example above, all cases would return `2.0.0`.
+Calling `cordova-check-plugins --unconstrain-versions` will ignore the specified version, so in the example above, all cases would return `2.0.0`.
 
 Note that this only option affects plugins whose source is npm.
 It will have no effect on plugins installed directly from github repos.
