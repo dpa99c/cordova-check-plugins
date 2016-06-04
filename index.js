@@ -574,6 +574,43 @@ function updateInteractive(plugins){
     nextPlugin();
 }
 
+function help(){
+    function log(msg){
+        logger.log(msg);
+    }
+    function linebreak(){
+        log("");
+    }
+
+    function tabIndent(msg){
+        return "    " + msg;
+    }
+
+    function displayOption(args, description){
+        log(tabIndent(args+" ...... "+description));
+    }
+
+    linebreak();
+    log("Synopsis");
+    linebreak();
+    log(tabIndent("cordova-check-plugins [options]"));
+    linebreak();
+    log("Options");
+    displayOption("-h, --help", "Displays this help list.");
+    displayOption("-v, --version", "Displays currently installed version of this module.");
+    displayOption("--verbose", "Displays detailed log output.");
+    displayOption("--update={mode}", "Specifies update mode for plugins which have updates available.");
+        log(tabIndent("Valid modes are:"));
+        log(tabIndent((tabIndent("none - (default) don't update plugins"))));
+        log(tabIndent((tabIndent("interactive - using interactive CLI to choose which plugins to update manually"))));
+        log(tabIndent((tabIndent("auto - automatically update any plugins for which an update is available"))));
+    displayOption("--unconstrain-versions", "Unconstrains checking of remote version so the highest remote version will be displayed regardless of locally specified version.");
+    displayOption("--force-update", "Forces the update of dependent plugins.");
+    linebreak();
+    log("For more details see the Github page: http://github.com/dpa99c/cordova-check-plugins");
+
+}
+
 /***********
  * Logging
  ***********/
@@ -627,8 +664,11 @@ function run(){
         cliArgs = minimist(process.argv.slice(2));
 
         if(cliArgs["v"] || cliArgs["version"]){
-            logger.log(require('./package.json').version);
-            return;
+            return logger.log(require('./package.json').version);
+        }
+
+        if(cliArgs["h"] || cliArgs["help"]){
+            return help();
         }
 
         if(cliArgs["verbose"]){

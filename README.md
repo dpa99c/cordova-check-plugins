@@ -46,6 +46,13 @@ Plugins for which updates are available can optionally be updated either interac
 
 ## Command-line options
 
+### -h or --help
+
+    $ cordova-check-plugins -h
+    $ cordova-check-plugins --help
+
+Displays usage information.
+
 ### -v or --version
 
     $ cordova-check-plugins -v
