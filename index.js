@@ -161,7 +161,13 @@ function checkGitSource(id, source){
 
     try{
         if(!ghClient){
-            ghClient = github.client();
+            var ghOpts = {};
+            if(cliArgs["github-username"] && cliArgs["github-password"]){
+                ghOpts.username = cliArgs["github-username"];
+                ghOpts.password = cliArgs["github-password"];
+                logger.debug("Using specified GitHub credentials to authenticate access to the GitHub API");
+            }
+            ghClient = github.client(ghOpts);
         }
         if(source.url.match(GITHUB_GIT_REGEX)){
             source.url = parseGitProtocolUrl(source.url);
@@ -596,6 +602,7 @@ function help(){
     log(tabIndent("cordova-check-plugins [options]"));
     linebreak();
     log("Options");
+
     displayOption("-h, --help", "Displays this help list.");
     displayOption("-v, --version", "Displays currently installed version of this module.");
     displayOption("--verbose", "Displays detailed log output.");
@@ -606,6 +613,9 @@ function help(){
         log(tabIndent((tabIndent("auto - automatically update any plugins for which an update is available"))));
     displayOption("--unconstrain-versions", "Unconstrains checking of remote version so the highest remote version will be displayed regardless of locally specified version.");
     displayOption("--force-update", "Forces the update of dependent plugins.");
+    displayOption("--github-username", "Username to use for authenticated access to GitHub API. Specification of user credentials for GitHub increases API request limit to 5000 requests/hour.");
+    displayOption("--github-password", "Password to use for authenticated access to GitHub API. Specification of user credentials for GitHub increases API request limit to 5000 requests/hour.");
+
     linebreak();
     log("For more details see the Github page: http://github.com/dpa99c/cordova-check-plugins");
 

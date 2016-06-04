@@ -113,6 +113,15 @@ Without it, only the "parent" plugin - in this case `cordova-plugin-file-transfe
 
     $ cordova-check-plugins --update=auto --force-update
 
+### --github-username and --github-password
+
+Allows specification of user credentials for GitHub, increasing API request limit to 5000 requests/hour.
+
+When checking remote versions for that are hosted on GitHub, by default unauthenticated access to the GitHub API is used.
+This is [rate limited](https://developer.github.com/v3/#rate-limiting) to 60 requests/hour.
+For most users, this should be sufficient, but if this module is used in a Continuous Integration environment with a project using multiple GitHub-hosted plugins, that rate can be exceeded.
+By specifying valid GitHub user credentials, these will be used when communicating with the GitHub API, which increases the number of allowed requests to 5000 requests/hour.
+
 License
 ================
 
