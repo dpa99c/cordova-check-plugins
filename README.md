@@ -116,6 +116,12 @@ Without it, only the "parent" plugin - in this case `cordova-plugin-file-transfe
 
     $ cordova-check-plugins --update=auto --force-update
 
+### --save
+
+Save changes to the config.xml
+
+    $ cordova-check-plugins --update=auto --force-update --save
+
 ### --github-username and --github-password
 
 Allows specification of user credentials for GitHub, increasing API request limit to 5000 requests/hour.
