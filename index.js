@@ -498,7 +498,7 @@ function updatePlugin(plugin, complete){
             pluginSource = plugin.source.id;
         }
         var saveCommand = save ? ' --save' : '';
-        exec(cliCommand+' plugin add '+pluginSource+save, function(err, stdout, stderr) {
+        exec(cliCommand+' plugin add '+pluginSource+saveCommand, function(err, stdout, stderr) {
             if(err){
                 var msg = "\nError adding plugin '"+plugin.id+"'" + "\n\n" + err;
                 logger.error(msg);
