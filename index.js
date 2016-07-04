@@ -39,6 +39,7 @@ var PLUGINS_DIR = './plugins/',
  ******************/
 var verbose = false,
     unconstrainVersions = false,
+    save = false,
     updateMode,
     cliArgs,
     plugins = {},
@@ -496,7 +497,8 @@ function updatePlugin(plugin, complete){
         }else{
             pluginSource = plugin.source.id;
         }
-        exec(cliCommand+' plugin add '+pluginSource, function(err, stdout, stderr) {
+        var saveCommand = save ? ' --save' : '';
+        exec(cliCommand+' plugin add '+pluginSource+saveCommand, function(err, stdout, stderr) {
             if(err){
                 var msg = "\nError adding plugin '"+plugin.id+"'" + "\n\n" + err;
                 logger.error(msg);
@@ -722,6 +724,9 @@ function run(){
             updateMode = cliArgs["update"];
         }else{
             updateMode = "none";
+        }
+        if(cliArgs["save"]){
+            save = true;
         }
         Spinner.setDefaultSpinnerString('|/-\\');
         // Start
