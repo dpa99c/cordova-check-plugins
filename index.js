@@ -178,6 +178,7 @@ function checkGitSource(id, source){
         if(!source.url.match(GITHUB_HTTPS_REGEX)){
             return handleError("source.url '"+source.url+"' is not a valid github repo URL in the form 'https://github.com/username/reponame' or 'git://github.com/username/reponame.git'");
         }
+        source.url = source.url.replace(/\.git/, '');
         var parts = source.url.match(GITHUB_HTTPS_REGEX),
             user = parts[1],
             repo = parts[2],
