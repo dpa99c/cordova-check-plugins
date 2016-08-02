@@ -497,9 +497,14 @@ function updatePlugin(plugin, complete){
             }
         }else{
             pluginSource = plugin.source.id;
+            if(unconstrainVersions && pluginSource.match('@')){
+                pluginSource = pluginSource.split('@')[0] + '@' + plugin.remote;
+            }
         }
-        var saveCommand = save ? ' --save' : '';
-        exec(cliCommand+' plugin add '+pluginSource+saveCommand, function(err, stdout, stderr) {
+        var saveCommand = save ? ' --save' : '',
+            updateCommand = cliCommand+' plugin add '+pluginSource+saveCommand;
+        logger.debug('Update command: '+updateCommand);
+        exec(updateCommand, function(err, stdout, stderr) {
             if(err){
                 var msg = "\nError adding plugin '"+plugin.id+"'" + "\n\n" + err;
                 logger.error(msg);
