@@ -1,6 +1,6 @@
 {
   "name": "cordova-check-plugins",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "A CLI tool to check for updates / manage updating Cordova plugins.",
   "main": "index.js",
   "author": "Dave Alden",
