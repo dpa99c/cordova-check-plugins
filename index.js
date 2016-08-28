@@ -63,7 +63,10 @@ function readJson(){
             pluginCount = 0;
             for(var id in json){
                 var plugin = json[id];
-                plugins[id] = {source: plugin['source']};
+                plugins[id] = {
+                    source: plugin['source'],
+                    variables: plugin['variables']
+                };
                 pluginCount++;
             }
             getCurrentVersions();
@@ -501,9 +504,15 @@ function updatePlugin(plugin, complete){
                 pluginSource = pluginSource.split('@')[0] + '@' + plugin.remote;
             }
         }
-        var saveCommand = save ? ' --save' : '',
-            updateCommand = cliCommand+' plugin add '+pluginSource+saveCommand;
+        var args = '';
+        if(save) args += ' --save';
+        for(var name in plugin.variables){
+            args += ' --variable '+name+'="'+plugin.variables[name]+'"';
+        }
+
+        updateCommand = cliCommand+' plugin add '+pluginSource+args;
         logger.debug('Update command: '+updateCommand);
+
         exec(updateCommand, function(err, stdout, stderr) {
             if(err){
                 var msg = "\nError adding plugin '"+plugin.id+"'" + "\n\n" + err;
