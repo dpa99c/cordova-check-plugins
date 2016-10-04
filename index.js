@@ -31,8 +31,8 @@ try{
  ***********/
 var PLUGINS_DIR = './plugins/',
     FETCH_FILE = PLUGINS_DIR + 'fetch.json',
-    GITHUB_HTTPS_REGEX = /https:\/\/github\.com\/([^\/]+)\/([^\/]+)$/,
-    GITHUB_GIT_REGEX = /git:\/\/github\.com\/([^\/]+)\/([^\/.]+)(?:\.git)?/;
+    GITHUB_HTTPS_REGEX = /^https:\/\/(?:\w*:?\w*@?)github\.com\/([^\/]+)\/([^\/.]+)(?:\.git)?$/,
+    GITHUB_GIT_REGEX = /^git:\/\/(?:\w*:?\w*@?)github\.com\/([^\/]+)\/([^\/.]+)(?:\.git)?$/;
 
 /******************
  * Global variables
