@@ -73,7 +73,7 @@ function readJson(){
         }catch(e){
             handleFatalException(e);
         }
-    })
+    });
 }
 
 function getCurrentVersions(){
@@ -448,7 +448,7 @@ function getPluginSnippet(id, source, installedVersion, remoteVersion, error){
         snippet += "\nerror: "+error;
     }
     snippet += "\n";
-    return snippet
+    return snippet;
 }
 
 function startProgress(msg){
