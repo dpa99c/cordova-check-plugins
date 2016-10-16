@@ -69,7 +69,7 @@ Displays detailed log output.
 
     $ cordova-check-plugins --verbose
 
-### --update={mode}
+### --update={mode|pluginIds}
 
 Specifies update mode for plugins which have updates available. Valid modes are:
 
@@ -83,6 +83,13 @@ i.e.
         same as:  $ cordova-check-plugins
     $ cordova-check-plugins --update=interactive
     $ cordova-check-plugins --update=auto
+
+Or where `pluginIds` is the ID of a single specific plugin to update, or a space-separated list of multiple plugin IDs.
+
+e.g
+
+    $ cordova-check-plugins --update=cordova-plugin-geolocation
+    $ cordova-check-plugins --update="cordova-plugin-geolocation cordova-plugin-dialogs"
 
 ### --unconstrain-versions
 

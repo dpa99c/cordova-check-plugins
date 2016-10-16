@@ -40,7 +40,7 @@ var PLUGINS_DIR = './plugins/',
 var verbose = false,
     unconstrainVersions = false,
     save = false,
-    updateMode,
+    updateMode = null,
     cliArgs,
     plugins = {},
     pluginCount,
@@ -98,11 +98,11 @@ function checkRemoteVersions(){
     startProgress("Checking remote versions");
     for(var id in plugins){
         plugin = plugins[id];
-        if(plugin.source.type == "registry"){
+        if(plugin.source.type === "registry"){
             checkRegistrySource(id, plugin.source);
-        }else if(plugin.source.type == "git"){
+        }else if(plugin.source.type === "git"){
             checkGitSource(id, plugin.source);
-        }else if(plugin.source.type == "local"){
+        }else if(plugin.source.type === "local"){
             checkLocalSource(id, plugin.source);
         }else{
             var msg = "Plugin '"+id+"' has source.type='"+plugin.source.type+"' which is currently not supported";
@@ -251,7 +251,7 @@ function parseGitProtocolUrl(gitUrl){
 
 function checkedRemoteVersion(){
     checkCount++;
-    if(checkCount == pluginCount){
+    if(checkCount === pluginCount){
         endProgress();
         compareVersions();
     }
@@ -289,7 +289,7 @@ function displayResults(){
     // Outdated local
     var outdated = _.filter(plugins, function(plugin, id){
         plugin.id = id;
-        return plugin.status == "newer-remote";
+        return plugin.status === "newer-remote";
     });
     if(outdated.length > 0){
         logger.log(getTitle("Plugin update available").green);
@@ -302,7 +302,7 @@ function displayResults(){
     // newer local/unknown mismatch
     var newer = _.filter(plugins, function(plugin, id){
         plugin.id = id;
-        return plugin.status == "newer-installed";
+        return plugin.status === "newer-installed";
     });
     if(newer.length > 0){
         logger.log(getTitle("Installed plugin version newer than remote default").yellow);
@@ -314,7 +314,7 @@ function displayResults(){
     // unknown mismatch
     var unknown = _.filter(plugins, function(plugin, id){
         plugin.id = id;
-        return plugin.status == "unknown-mismatch";
+        return plugin.status === "unknown-mismatch";
     });
     if(unknown.length > 0){
         logger.log(getTitle("Unknown plugin version mismatch").yellow);
@@ -326,7 +326,7 @@ function displayResults(){
     // error
     var error = _.filter(plugins, function(plugin, id){
         plugin.id = id;
-        return plugin.status == "error";
+        return plugin.status === "error";
     });
     if(error.length > 0){
         logger.log(getTitle("Error checking plugin version").red);
@@ -338,7 +338,7 @@ function displayResults(){
     // Up-to-date (verbose)
     var equal = _.filter(plugins, function(plugin, id){
         plugin.id = id;
-        return plugin.status == "equal";
+        return plugin.status === "equal";
     });
     if(equal.length > 0){
         logger.log(getTitle("Up-to-date plugins").grey);
@@ -348,18 +348,58 @@ function displayResults(){
     }
 
     if(outdated.length > 0){
-        if(updateMode == "auto"){
-            updateAll(outdated, function(success){
-                if(success){
-                    logger.log("\nAutomatically updated all outdated plugins".green);
-                }else{
-                    logger.log("\nFailed to update some outdated plugins".yellow);
-                }
+        doUpdate(outdated);
+    }
+}
 
-            });
-        }else if(updateMode == "interactive"){
-            updateInteractive(outdated);
+function updateModeIsPluginIds(){
+    return updateMode !== "auto" && updateMode !== "interactive" && updateMode !== "none" && updateMode !== null;
+}
+
+function doUpdate(outdated){
+    if(updateMode === "auto" && outdated){
+        updatePlugins(outdated, function(success){
+            if(success){
+                logger.log("\nAutomatically updated all outdated plugins".green);
+            }else{
+                logger.log("\nFailed to update all outdated plugins".yellow);
+            }
+
+        });
+    }else if(updateMode === "interactive" && outdated){
+        updateInteractive(outdated);
+    }
+    else if(updateModeIsPluginIds()){
+        var pluginIds, valid = true, specifiedPlugins = [];
+        logger.debug("updateMode: "+updateMode);
+        if(updateMode.match(/\ /)){
+            logger.debug("updateMode is multiple ");
+            pluginIds = updateMode.split(' ');
+        }else{
+            logger.debug("updateMode is single ");
+            pluginIds = [updateMode];
         }
+
+        pluginIds.forEach(function(pluginId){
+            if(!plugins[pluginId]){
+                valid = false;
+                return logger.warn("Cannot update plugin '"+pluginId+"' as it is not installed in the project");
+            }
+
+            if(plugins[pluginId].status !== "newer-remote"){
+                valid = false;
+                return logger.warn("Cannot update plugin '"+pluginId+"' as no newer remote version is available");
+            }
+            specifiedPlugins.push(plugins[pluginId]);
+        });
+
+        updatePlugins(specifiedPlugins, function(success){
+            if(success && valid){
+                logger.log("\Successfully updated all specified plugins".green);
+            }else{
+                logger.log("\nFailed to update all specified plugins".yellow);
+            }
+        });
     }
 }
 
@@ -382,11 +422,11 @@ function getTitle(msg){
 }
 
 function getPluginSnippet(id, source, installedVersion, remoteVersion, error){
-    if(source.type == "git"){
+    if(source.type === "git"){
         source = source.url;
-    }else if(source.type == "registry"){
+    }else if(source.type === "registry"){
         source = "npm://"+source.id;
-    }else if(source.type == "local"){
+    }else if(source.type === "local"){
         source = source.path;
     }else{
         source = "UNKNOWN";
@@ -394,9 +434,9 @@ function getPluginSnippet(id, source, installedVersion, remoteVersion, error){
     installedVersion = installedVersion ? installedVersion : "UNKNOWN";
     remoteVersion = remoteVersion ? remoteVersion : "UNKNOWN";
 
-    if(installedVersion == "UNKNOWN" && remoteVersion != "UNKNOWN"){
+    if(installedVersion === "UNKNOWN" && remoteVersion !== "UNKNOWN"){
         installedVersion += " - check plugins/fetch.json for orphaned entries";
-    }else if(remoteVersion == "UNKNOWN" && installedVersion != "UNKNOWN"){
+    }else if(remoteVersion === "UNKNOWN" && installedVersion !== "UNKNOWN"){
         installedVersion += " - check remote source is valid";
     }
 
@@ -493,7 +533,7 @@ function updatePlugin(plugin, complete){
 
     function add(){
         var pluginSource;
-        if(plugin.source.type == "git"){
+        if(plugin.source.type === "git"){
             pluginSource = plugin.source.url;
             if(plugin.source.ref){
                 pluginSource += '#'+plugin.source.ref;
@@ -531,25 +571,25 @@ function updatePlugin(plugin, complete){
     });
 }
 
-function updateAll(plugins, cb){
+function updatePlugins(plugins, cb){
     var pluginIds = [];
     plugins.forEach(function(plugin){
         pluginIds.push(plugin.id);
         total = pluginIds.length;
     });
-    logger.debug("Updating all plugins: "+pluginIds.join(", "));
+    logger.debug("Updating plugins: "+pluginIds.join(", "));
 
     var success = true;
 
     function nextPlugin(){
-        if(plugins.length == 0){
+        if(plugins.length === 0){
             cb(success);
             return;
         }
         var plugin = plugins.pop();
         updatePlugin(plugin, function(result){
             updatedPlugin(plugin, result);
-            if(result == -1 && success) success = false;
+            if(result === -1 && success) success = false;
             nextPlugin();
         });
     }
@@ -557,7 +597,7 @@ function updateAll(plugins, cb){
 }
 
 function updatedPlugin(plugin, result){
-    if(result == 0){
+    if(result === 0){
         logger.log("\nUpdated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.remote);
     }else{
         var msg = "Failed to update plugin '"+plugin.id+"'";
@@ -565,12 +605,13 @@ function updatedPlugin(plugin, result){
     }
 }
 
+
 function updateInteractive(plugins){
     function finished(){
         logger.log("\nInteractive update complete".green);
     }
     function nextPlugin(){
-        if(plugins.length == 0){
+        if(plugins.length === 0){
             finished();
             return;
         }
@@ -615,7 +656,7 @@ function updateInteractive(plugins){
                     break;
                 case "all":
                     plugins.push(plugin);
-                    updateAll(plugins, finished);
+                    updatePlugins(plugins, finished);
                     break;
                 case "abort":
                     finished();
@@ -652,13 +693,14 @@ function help(){
     displayOption("-h, --help", "Displays this help list.");
     displayOption("-v, --version", "Displays currently installed version of this module.");
     displayOption("--verbose", "Displays detailed log output.");
-    displayOption("--update={mode}", "Specifies update mode for plugins which have updates available.");
+    displayOption("--update={mode|pluginIds}", "Specifies update mode for plugins which have updates available.");
         log(tabIndent("Valid modes are:"));
         log(tabIndent((tabIndent("none - (default) don't update plugins"))));
         log(tabIndent((tabIndent("interactive - using interactive CLI to choose which plugins to update manually"))));
         log(tabIndent((tabIndent("auto - automatically update any plugins for which an update is available"))));
-    displayOption("--unconstrain-versions", "Unconstrains checking of remote version so the highest remote version will be displayed regardless of locally specified version.");
+        log(tabIndent("Or where pluginIds is the ID of a single specific plugin to update, or a space-separated list of multiple plugin IDs"));
     displayOption("--force-update", "Forces the update of dependent plugins.");
+    displayOption("--unconstrain-versions", "Unconstrains checking of remote version so the highest remote version will be displayed regardless of locally specified version.");
     displayOption("--github-username", "Username to use for authenticated access to GitHub API. Specification of user credentials for GitHub increases API request limit to 5000 requests/hour.");
     displayOption("--github-password", "Password to use for authenticated access to GitHub API. Specification of user credentials for GitHub increases API request limit to 5000 requests/hour.");
 
@@ -737,14 +779,12 @@ function run(){
         }
         if(cliArgs["update"]){
             updateMode = cliArgs["update"];
-        }else{
-            updateMode = "none";
         }
         if(cliArgs["save"]){
             save = true;
         }
         Spinner.setDefaultSpinnerString('|/-\\');
-        // Start
+
         readJson();
     }catch(e){
         handleFatalException(e);
