@@ -56,9 +56,7 @@ function readJson(){
     jsonfile.readFile(FETCH_FILE, function(err, json){
         try{
             if(err){
-                var msg = "FATAL ERROR: Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project\n\n"+err;
-                logger.error(msg);
-                return -1;
+                handleFatalError( "Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project.\n\n"+err);
             }
             pluginCount = 0;
             for(var id in json){
