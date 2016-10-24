@@ -1,0 +1,20 @@
+{
+    "version": "0.1.1",
+    "name": "local_plugin",
+    "cordova_name": "local plugin",
+    "description": "Local plugin",
+    "author": "Dave Alden",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/dpa99c/local_plugin.git"
+    },
+    "cordova": {
+        "id": "local_plugin",
+        "platforms": [
+            "android"
+        ]    
+    },
+    "issue": "https://github.com/dpa99c/local_plugin/issues",
+    "keywords": []
+}

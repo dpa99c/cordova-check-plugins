@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin
+        xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="local_plugin"
+        version="0.1.1">
+    <name>local_plugin</name>
+    <description>Local plugin</description>
+    <author>Dave Alden</author>
+    <engines>
+        <engine name="cordova" version=">=3.0.0" />
+    </engines>
+    <repo>https://github.com/dpa99c/local_plugin.git</repo>
+    <issue>https://github.com/dpa99c/local_plugin/issues</issue>
+
+    <license>MIT</license>
+</plugin>
