@@ -760,6 +760,7 @@ function run(){
 
         // Setup
         cliArgs = minimist(process.argv.slice(2));
+        logger.dump(cliArgs, "CLI args");
 
         if(cliArgs["v"] || cliArgs["version"]){
             return logger.log(require('./package.json').version);
