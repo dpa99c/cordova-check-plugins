@@ -40,7 +40,8 @@
   },
   "devDependencies": {
     "jshint": "^2.6.0",
-    "jasmine": "^2.5.2"
+    "jasmine": "^2.5.2",
+    "bdd-stdin": "0.2.0"
   },
   "scripts": {
     "test": "npm run-script jshint && jasmine",

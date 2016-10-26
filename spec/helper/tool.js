@@ -30,10 +30,14 @@ var toolHelper = (function(){
         staticArgs = args;
     };
 
+    toolHelper.obfuscateCliArgs = function(command){
+        return command.replace(/github-password=[^ ]+/,'github-password={obfuscated}');
+    };
+
     toolHelper.run = function(args, onFinish){
         args = args || '';
         var command = "cordova-check-plugins " + args + ' ' + staticArgs;
-        logger.log("Running tool: "+command);
+        logger.log("Running tool: "+toolHelper.obfuscateCliArgs(command));
         exec(command, function(err, stdout, stderr) {
             if(err){
                 return onFinish(-1, stdout, stderr);

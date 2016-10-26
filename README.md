@@ -22,6 +22,7 @@ For example:
     cordova-plugin-whitelist@1
     cordova-plugin-file@4.0.0
     cordova-plugin-inappbrowser@~1.1.1
+    cordova-plugin-device@^1.0.0
     https://github.com/dpa99c/cordova-custom-config
     https://github.com/apache/cordova-plugin-battery-status#r1.0.0
     git://github.com/apache/cordova-plugin-battery-status.git#r1.0.0
@@ -105,6 +106,7 @@ For example, let's say `cordova-plugin-foo` has remote versions `1.0.1`, `1.0.2`
 - If `cordova plugin install cordova-plugin-foo@1.0` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.2`
 - If `cordova plugin install cordova-plugin-foo@1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.1`
 - If `cordova plugin install cordova-plugin-foo@~1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.2`
+- If `cordova plugin install cordova-plugin-foo@^1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.1.0`
 
 Calling `cordova-check-plugins --unconstrain-versions` will ignore the specified version, so in the example above, all cases would return `2.0.0`.
 

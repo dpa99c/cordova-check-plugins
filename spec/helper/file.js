@@ -16,6 +16,29 @@ var fileHelper = (function(){
      * Public API
      ************/
     fileHelper = {
+        listPlugins: function(onFinish){
+            exec('cordova plugin ls', function(err, stdout, stderr) {
+                if(err){
+                    return onFinish(null, err, stderr);
+                }
+                var plugins = {};
+                if(!stdout.match('No plugins added')){
+                    var entries = stdout.split(/\n/g);
+                    entries.forEach(function(entry){
+                        if(!entry) return;
+                        var fields = entry.split(/\ /g);
+                        var id = fields.shift();
+                        var version = fields.shift();
+                        plugins[id] = {
+                            id: id,
+                            version: version,
+                            title: fields.join(' ').replace(/[\r\"]/g,'')
+                        }
+                    });
+                }
+                onFinish(plugins, 0, stderr);
+            });
+        },
         rmdirRfSync: function(path) {
             var files = [];
             if( fs.existsSync(path) ) {
@@ -39,17 +62,21 @@ var fileHelper = (function(){
             fs.copySync(path.resolve('spec/config.xml'), path.resolve('./config.xml'));
             logger.log("Restored original config.xml");
         },
-        reset: function(){
-            fileHelper.removePluginsDir();
-            fileHelper.restoreConfigXml();
-            logger.log("Reset complete");
+        reset: function(onFinish){
+            fileHelper.removeAllPlugins(function(){
+                fileHelper.removePluginsDir();
+                fileHelper.restoreConfigXml();
+                logger.log("Reset complete");
+                onFinish();
+            });
         },
+
         addPlugin: function(pluginSource, onFinish, opts){
             opts = opts || {};
-            var command  = 'cordova plugin add '+pluginSource;
+            var command  = 'cordova plugin add "'+pluginSource+'"';
             if(opts.save) command += ' --save';
 
-            logger.log("Adding plugin: "+pluginSource);
+            logger.log("Adding plugin: '"+command+"'");
             exec(command, function(err, stdout, stderr) {
                 if(err){
                     return onFinish(-1, stdout, stderr);
@@ -65,30 +92,44 @@ var fileHelper = (function(){
                 }
                 if(pluginSources.length == 0) return onFinish(results);
 
-                var pluginSource = pluginSources.pop();
+                var pluginSource = pluginSources.shift();
                 fileHelper.addPlugin(pluginSource, addNextPlugin.bind(this, pluginSource), opts);
             };
             addNextPlugin();
         },
-        listPlugins: function(onFinish){
-            exec('cordova plugin ls', function(err, stdout, stderr) {
+        removePlugin: function(pluginId, onFinish, opts){
+            opts = opts || {};
+            var command  = 'cordova plugin rm "'+pluginId+'"';
+            if(opts.save) command += ' --save';
+
+            logger.log("Removing plugin: '"+command+"'");
+            exec(command, function(err, stdout, stderr) {
                 if(err){
-                    return onFinish(-1, stderr);
+                    return onFinish(-1, stdout, stderr);
                 }
-                var plugins = {};
-                var entries = stdout.split(/\n/g);
-                entries.forEach(function(entry){
-                    if(!entry) return;
-                    var fields = entry.split(/\ /g);
-                    var id = fields.shift();
-                    var version = fields.shift();
-                    plugins[id] = {
-                        id: id,
-                        version: version,
-                        title: fields.join(' ').replace(/[\r\"]/g,'')
-                    }
-                });
-                onFinish(0, plugins, stderr);
+                onFinish(0, stdout, stderr);
+            });
+        },
+        removePlugins: function(pluginIds, onFinish, opts){
+            var doNextPlugin; var results = {};
+            doNextPlugin = function(pluginId, err, stdout, stderr){
+                if(pluginId){
+                    results[pluginId] = [err, stdout, stderr];
+                }
+                if(pluginIds.length == 0) return onFinish(results);
+
+                var pluginId = pluginIds.shift();
+                fileHelper.removePlugin(pluginId, doNextPlugin.bind(this, pluginId), opts);
+            };
+            doNextPlugin();
+        },
+        removeAllPlugins: function(onFinish, opts){
+            fileHelper.listPlugins(function(plugins){
+                var pluginIds = [];
+                for(pluginId in plugins){
+                    pluginIds.push(pluginId);
+                }
+                fileHelper.removePlugins(pluginIds, onFinish, opts);
             });
         },
         readFetchJson: function(){
@@ -100,10 +141,16 @@ var fileHelper = (function(){
         },
         forceLocalPluginVersion: function(pluginId, version){
             var fileContents = fs.readFileSync(path.resolve('./plugins/'+pluginId+'/plugin.xml'), 'utf-8');
-            var plugin_orig = fileContents.match(/<plugin ([^>]+)>/)[0];
+            var plugin_orig = fileContents.match(/<plugin(?: )*([^>]+)>/)[0];
             var plugin_new = plugin_orig.replace(/version="[^"]+"/, 'version="'+version+'"');
             fileContents = fileContents.replace(plugin_orig, plugin_new);
             fs.writeFileSync(path.resolve('./plugins/'+pluginId+'/plugin.xml'), fileContents, 'utf-8');
+        },
+        readConfigXml: function(){
+          return fs.readFileSync(path.resolve('./config.xml'), 'utf-8');
+        },
+        writeConfigXml: function(fileContents){
+            fs.writeFileSync(path.resolve('./config.xml'), fileContents, 'utf-8');
         }
     };
     return fileHelper;
