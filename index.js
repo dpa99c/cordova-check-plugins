@@ -123,10 +123,12 @@ function handleRemoteVersionCheckError(id, msg, err){
 }
 
 function checkRegistrySource(id, source){
-    var idToCheck = unconstrainVersions ? source.id.replace(/(@.*)$/, '') : source.id;
+    var idToCheck = unconstrainVersions ? source.id.replace(/(@([^~]?).*)$/, '') : source.id;
     logger.debug("Checking latest npm registry version for '"+id+"' using '"+idToCheck+"'");
+    var command = 'npm view "'+idToCheck+'" version';
+    logger.debug(command);
 
-    exec('npm view '+idToCheck+' version', function(err, stdout, stderr) {
+    exec(command, function(err, stdout, stderr) {
         try{
             if(err){
                 handleRemoteVersionCheckError(id, "Failed to check npm registry", err);
