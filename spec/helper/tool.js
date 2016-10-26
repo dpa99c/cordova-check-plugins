@@ -36,7 +36,7 @@ var toolHelper = (function(){
 
     toolHelper.run = function(args, onFinish){
         args = args || '';
-        var command = "cordova-check-plugins " + args + ' ' + staticArgs;
+        var command = "node index.js " + args + ' ' + staticArgs;
         logger.log("Running tool: "+toolHelper.obfuscateCliArgs(command));
         exec(command, function(err, stdout, stderr) {
             if(err){
