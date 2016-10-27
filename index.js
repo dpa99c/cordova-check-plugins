@@ -12,7 +12,7 @@ try{
         minimist = require('minimist'),
         github = require('octonode'),
         Base64 = require('js-base64').Base64,
-        _ = require('underscore'),
+        _ = require('lodash'),
         semver = require('semver'),
         Spinner = require('cli-spinner').Spinner,
         cordovaCommon = require('cordova-common'),
