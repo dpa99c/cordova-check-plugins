@@ -7,6 +7,10 @@ var logger = require(path.resolve('spec/helper/logger.js'))();
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
+toolHelper.setStaticArgs(
+    ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
+    ' --github-password="'+process.env.GITHUB_PASSWORD+'"');
+
 describe("A spec for CLI options", function() {
 
     beforeAll(function(done) {
@@ -80,8 +84,6 @@ describe("A spec for CLI options", function() {
     it("should use the specified Github user credentials when the '--github-username' and '--github-password' CLI options are supplied", function(done) {
         fileHelper.addPlugin('https://github.com/apache/cordova-plugin-network-information', function(err, stdout, stderr){
             toolHelper.run(
-                ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
-                ' --github-password="'+process.env.GITHUB_PASSWORD+'"'+
                 ' --verbose',
                 function(err, stdout, stderr, output){
                     expect(err).toBeFalsy();

@@ -1,4 +1,3 @@
-/*
 var path = require('path');
 var fs = require('fs');
 
@@ -7,6 +6,10 @@ var toolHelper = require(path.resolve('spec/helper/tool.js'))();
 var logger = require(path.resolve('spec/helper/logger.js'))();
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
+
+toolHelper.setStaticArgs(
+    ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
+    ' --github-password="'+process.env.GITHUB_PASSWORD+'"');
 
 describe("A spec for updating plugins", function() {
 
@@ -202,4 +205,3 @@ describe("A spec for updating plugins", function() {
 
 
 
-*/
