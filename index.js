@@ -123,7 +123,7 @@ function readConfigXml(){
             _plugins.forEach(function(_plugin){
               _plugin = _plugin.$;
                 var name = _plugin.name;
-                var version = _plugin.spec || _plugin.version;
+                var version = _plugin.spec;
                 var found = false;
                 if(!_.isNil(plugins[name])){
                     plugins[name]['target'] = version;
