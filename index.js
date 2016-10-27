@@ -3,8 +3,14 @@
 /**********
  * Modules
  **********/
+// lib
+var logger = require('lib/logger.js')();
+var update = require('lib/update.js')();
+var errorHandler = require('lib/errorHandler.js')();
+var progress = require('lib/progress.js')();
+
+// 3rd party
 try{
-    // 3rd party
     var path = require('path'),
         fs = require('fs-extra'),
         colors = require('colors'),
@@ -15,18 +21,12 @@ try{
         Base64 = require('js-base64').Base64,
         _ = require('lodash'),
         semver = require('semver'),
-        Spinner = require('cli-spinner').Spinner,
         cordovaCommon = require('cordova-common'),
         PluginInfoProvider = cordovaCommon.PluginInfoProvider,
         pluginInfoProvider = new PluginInfoProvider(),
-        inquirer = require('inquirer'),
-        xml2js = require('xml2js').parseString,
-        plugman = require('plugman');
-
-    // lib
-    var logger = require(path.resolve('lib/logger.js'))();
+        xml2js = require('xml2js').parseString;
 }catch(e){
-    handleFatalException(e, "Failed to acquire module dependencies");
+    errorHandler.handleFatalException(e, "Failed to acquire module dependencies");
 }
 
 
@@ -51,8 +51,6 @@ var verbose = false,
     pluginCount,
     checkCount,
     ghClient,
-    spinner,
-    spinning = false,
     target;
 
 function start(){
@@ -62,11 +60,11 @@ function start(){
 function readJson(){
 
     logger.debug("Finding installed plugins");
-    startProgress("Checking local versions");
+    progress.start("Checking local versions");
     jsonfile.readFile(FETCH_FILE, function(err, json){
         try{
             if(err){
-                handleFatalError( "Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project.\n\n"+err);
+                errorHandler.handleFatalError( "Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project.\n\n"+err);
             }
             pluginCount = 0;
             for(var id in json){
@@ -79,7 +77,7 @@ function readJson(){
             }
             getInstalledVersions();
         }catch(e){
-            handleFatalException(e);
+            errorHandler.handleFatalException(e);
         }
     });
 }
@@ -161,8 +159,8 @@ function readConfigXml(){
 function checkRemoteVersions(){
     var plugin;
     checkCount = 0;
-    endProgress();
-    startProgress("Checking remote versions");
+    progress.end();
+    progress.start("Checking remote versions");
     for(var id in plugins){
         plugin = plugins[id];
         if(plugin.source.type === "registry"){
@@ -321,7 +319,7 @@ function parseGitProtocolUrl(gitUrl){
 function checkedRemoteVersion(){
     checkCount++;
     if(checkCount === pluginCount){
-        endProgress();
+        progress.end();
         compareVersions();
     }
 }
@@ -350,7 +348,7 @@ function compareVersions(){
         }
     displayResults();
     }catch(e){
-        handleFatalException(e);
+        errorHandler.handleFatalException(e);
     }
 }
 
@@ -417,58 +415,7 @@ function displayResults(){
     }
 
     if(outdated.length > 0){
-        doUpdate(outdated);
-    }
-}
-
-function updateModeIsPluginIds(){
-    return updateMode !== "auto" && updateMode !== "interactive" && updateMode !== "none" && updateMode !== null;
-}
-
-function doUpdate(outdated){
-    if(updateMode === "auto" && outdated){
-        updatePlugins(outdated, function(success){
-            if(success){
-                logger.log("\nAutomatically updated all outdated plugins".green);
-            }else{
-                logger.log("\nFailed to update all outdated plugins".yellow);
-            }
-
-        });
-    }else if(updateMode === "interactive" && outdated){
-        updateInteractive(outdated);
-    }
-    else if(updateModeIsPluginIds()){
-        var pluginIds, valid = true, specifiedPlugins = [];
-        logger.debug("updateMode: "+updateMode);
-        if(updateMode.match(/\ /)){
-            logger.debug("updateMode is multiple ");
-            pluginIds = updateMode.split(' ');
-        }else{
-            logger.debug("updateMode is single ");
-            pluginIds = [updateMode];
-        }
-
-        pluginIds.forEach(function(pluginId){
-            if(!plugins[pluginId]){
-                valid = false;
-                return logger.warn("Cannot update plugin '"+pluginId+"' as it is not installed in the project");
-            }
-
-            if(plugins[pluginId].status !== "newer-target"){
-                valid = false;
-                return logger.warn("Cannot update plugin '"+pluginId+"' as no newer target version is available");
-            }
-            specifiedPlugins.push(plugins[pluginId]);
-        });
-
-        updatePlugins(specifiedPlugins, function(success){
-            if(success && valid){
-                logger.log("\Successfully updated all specified plugins".green);
-            }else{
-                logger.log("\nFailed to update all specified plugins".yellow);
-            }
-        });
+        update.doUpdate(outdated);
     }
 }
 
@@ -520,222 +467,8 @@ function getPluginSnippet(id, source, installedVersion, targetVersion, error){
     return snippet;
 }
 
-function startProgress(msg){
-    spinner = new Spinner(msg+'... %s');
-    spinner.start();
-    spinning = true;
-}
-
-function endProgress(){
-    spinner.stop(true);
-    spinning = false;
-}
-
-/*
- * Updates
- */
-function resolveCliCommand(cb){
-    function resolveCordova(){
-        exec('cordova -v', function(err, stdout, stderr) {
-            if(err){
-                logger.debug("cordova command not found - checking for phonegap");
-                resolvePhonegap();
-            }else{
-                cb('cordova');
-            }
-        });
-    }
-    function resolvePhonegap(){
-        exec('phonegap -v', function(err, stdout, stderr) {
-            if(err){
-                handleFatalError( "Failed to find cordova or phonegap CLI command when listing installed plugins - ensure you have cordova/phonegap npm module installed either locally in your project folder or globally.\n\n"+err);
-            }else{
-                cb('phonegap');
-            }
-        });
-    }
-    resolveCordova();
-}
-
-function updatePlugin(plugin, complete){
-    var cliCommand;
-    logger.log("\n");
-    startProgress("Updating '"+plugin.id+"'");
-    function finish(result){
-        endProgress();
-        complete(result);
-    }
-
-    function forceRemove(){
-        var platforms = _.filter(fs.readdirSync('platforms'), function (file) {
-            return fs.statSync(path.resolve('platforms', file)).isDirectory();
-        });
-        _.each(platforms, function (platform) {
-            plugman.raw.uninstall(platform, "platforms/"+platform, plugin.id, "plugins", {
-                www_dir: "www",
-                force: true
-            });
-        });
-        logger.debug("Forcibly removed plugin '"+plugin.id+"'");
-        add();
-    }
 
 
-    function remove(){
-        exec(cliCommand+' plugin rm '+plugin.id, function(err, stdout, stderr) {
-            if(err){
-                var msg = "\nError removing plugin '"+plugin.id+"'" + "\n\n" + err;
-                if(cliArgs["force-update"]){
-                    logger.debug(msg);
-                    forceRemove();
-                    return;
-                }else{
-                    logger.error(msg);
-                    finish(-1);
-                    return;
-                }
-            }
-            logger.debug("Removed plugin '"+plugin.id+"'");
-            add();
-        });
-    }
-
-    function add(){
-        var pluginSource;
-        if(plugin.source.type === "git"){
-            pluginSource = plugin.source.url;
-            if(plugin.source.ref){
-                pluginSource += '#'+plugin.source.ref;
-            }
-        }else{
-            pluginSource = plugin.source.id;
-            if(unconstrainVersions && pluginSource.match('@')){
-                pluginSource = pluginSource.split('@')[0] + '@' + plugin.target;
-            }
-        }
-        var args = '';
-        if(save) args += ' --save';
-        for(var name in plugin.variables){
-            args += ' --variable '+name+'="'+plugin.variables[name]+'"';
-        }
-
-        updateCommand = cliCommand+' plugin add '+pluginSource+args;
-        logger.debug('Update command: '+updateCommand);
-
-        exec(updateCommand, function(err, stdout, stderr) {
-            if(err){
-                var msg = "\nError adding plugin '"+plugin.id+"'" + "\n\n" + err;
-                logger.error(msg);
-                finish(-1);
-                return;
-            }
-            logger.debug("Re-added plugin '"+plugin.id+"'");
-            finish(0);
-        });
-    }
-
-    resolveCliCommand(function(command){
-        cliCommand =  command;
-        remove();
-    });
-}
-
-function updatePlugins(plugins, cb){
-    var pluginIds = [];
-    plugins.forEach(function(plugin){
-        pluginIds.push(plugin.id);
-        total = pluginIds.length;
-    });
-    logger.debug("Updating plugins: "+pluginIds.join(", "));
-
-    var success = true;
-
-    function nextPlugin(){
-        if(plugins.length === 0){
-            cb(success);
-            return;
-        }
-        var plugin = plugins.pop();
-        updatePlugin(plugin, function(result){
-            updatedPlugin(plugin, result);
-            if(result === -1 && success) success = false;
-            nextPlugin();
-        });
-    }
-    nextPlugin();
-}
-
-function updatedPlugin(plugin, result){
-    if(result === 0){
-        logger.log("\nUpdated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.target);
-    }else{
-        var msg = "Failed to update plugin '"+plugin.id+"'";
-        logger.error(msg);
-    }
-}
-
-
-function updateInteractive(plugins){
-    logger.debug("Interactive update started");
-    function finished(){
-        logger.log("\nInteractive update complete".green);
-    }
-    function nextPlugin(){
-        if(plugins.length === 0){
-            finished();
-            return;
-        }
-
-        var plugin = plugins.pop();
-        inquirer.prompt([
-            {
-                type: "expand",
-                message: "Update '"+plugin.id+"'? ",
-                name: "choice",
-                choices: [
-                    {
-                        key: "y",
-                        name: "Yes",
-                        value: "yes"
-                    },
-                    {
-                        key: "n",
-                        name: "No",
-                        value: "no"
-                    },
-                    {
-                        key: "a",
-                        name: "All",
-                        value: "all"
-                    },
-                    new inquirer.Separator(),
-                    {
-                        key: "x",
-                        name: "Abort",
-                        value: "abort"
-                    }
-                ]
-            }
-        ], function(answer){
-            switch(answer.choice){
-                case "yes":
-                    updatePlugin(plugin, nextPlugin);
-                    break;
-                case "no":
-                    nextPlugin();
-                    break;
-                case "all":
-                    plugins.push(plugin);
-                    updatePlugins(plugins, finished);
-                    break;
-                case "abort":
-                    finished();
-                    break;
-            }
-        });
-    }
-    nextPlugin();
-}
 
 function help(){
     function log(msg){
@@ -779,24 +512,6 @@ function help(){
 
 }
 
-
-/**************************
- * Global exception handler
- **************************/
-function handleFatalException(e, _msg){
-    var msg = "FATAL EXCEPTION: ";
-    if(_msg) msg += _msg + "; ";
-    msg += e.message;
-    logger ? logger.error(msg) : console.error(msg);
-    process.exit(1); // exit on fatal error
-}
-
-function handleFatalError(msg){
-    var msg = "FATAL ERROR: " + msg;
-    logger ? logger.error(msg) : console.error(msg);
-    process.exit(1); // exit on fatal error
-}
-
 /***********
  * Main
  ***********/
@@ -832,11 +547,9 @@ function run(){
 
         target = cliArgs["target"] === "config" ? "config" : "remote";
 
-        Spinner.setDefaultSpinnerString('|/-\\');
-
         start();
     }catch(e){
-        handleFatalException(e);
+        errorHandler.handleFatalException(e);
     }
 }
 
