@@ -7,6 +7,10 @@ var logger = require(path.resolve('lib/logger.js'))();
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
+toolHelper.setStaticArgs(
+    ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
+    ' --github-password="'+process.env.GITHUB_PASSWORD+'"');
+
 describe("A spec for error handling", function() {
 
     beforeAll(function(done) {
