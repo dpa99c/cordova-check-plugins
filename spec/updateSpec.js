@@ -13,7 +13,7 @@ toolHelper.setStaticArgs(
 
 describe("A spec for updating plugins", function() {
 
-    beforeAll(function(done) {
+    beforeEach(function(done) {
         fileHelper.reset(done);
     });
 
