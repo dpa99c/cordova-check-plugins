@@ -3,7 +3,7 @@ var fs = require('fs');
 
 var fileHelper = require(path.resolve('spec/helper/file.js'))();
 var toolHelper = require(path.resolve('spec/helper/tool.js'))();
-var logger = require(path.resolve('spec/helper/logger.js'))();
+var logger = require(path.resolve('lib/logger.js'))();
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 

@@ -7,7 +7,7 @@ var toolHelper = (function(){
      *********************/
     var exec = require('child_process').exec;
     var path = require('path');
-    var logger = require(path.resolve('spec/helper/logger.js'))();
+    var logger = require(path.resolve('lib/logger.js'))();
 
     /**********************
      * Internal properties

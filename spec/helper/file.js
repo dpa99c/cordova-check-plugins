@@ -10,7 +10,7 @@ var fileHelper = (function(){
     var fs = require('fs-extra');
     var path = require('path');
     var exec = require('child_process').exec;
-    var logger = require(path.resolve('spec/helper/logger.js'))();
+    var logger = require(path.resolve('lib/logger.js'))();
 
     /************
      * Public API
