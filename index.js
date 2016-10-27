@@ -4,6 +4,7 @@
  * Modules
  **********/
 try{
+    // 3rd party
     var path = require('path'),
         fs = require('fs-extra'),
         colors = require('colors'),
@@ -21,6 +22,9 @@ try{
         inquirer = require('inquirer'),
         xml2js = require('xml2js').parseString,
         plugman = require('plugman');
+
+    // lib
+    var logger = require(path.resolve('lib/logger.js'))();
 }catch(e){
     handleFatalException(e, "Failed to acquire module dependencies");
 }
@@ -31,6 +35,7 @@ try{
  ***********/
 var PLUGINS_DIR = './plugins/',
     FETCH_FILE = PLUGINS_DIR + 'fetch.json',
+    CONFIG_FILE = './config.xml',
     GITHUB_HTTPS_REGEX = /^https:\/\/(?:\w*:?\w*@?)github\.com\/([^\/]+)\/([^\/.]+)(?:\.git)?$/,
     GITHUB_GIT_REGEX = /^git:\/\/(?:\w*:?\w*@?)github\.com\/([^\/]+)\/([^\/.]+)(?:\.git)?$/;
 
@@ -47,7 +52,12 @@ var verbose = false,
     checkCount,
     ghClient,
     spinner,
-    spinning = false;
+    spinning = false,
+    target;
+
+function start(){
+  readJson();
+}
 
 function readJson(){
 
@@ -67,14 +77,14 @@ function readJson(){
                 };
                 pluginCount++;
             }
-            getCurrentVersions();
+            getInstalledVersions();
         }catch(e){
             handleFatalException(e);
         }
     });
 }
 
-function getCurrentVersions(){
+function getInstalledVersions(){
     logger.debug("Reading installed plugin versions");
     var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(PLUGINS_DIR);
 
@@ -86,8 +96,67 @@ function getCurrentVersions(){
             logger.error(msg);
         }
     });
-    checkRemoteVersions();
+    getTargetVersions();
 }
+
+
+function getTargetVersions(){
+  if(target === "config"){
+    getConfigVersions();
+  }else{
+    checkRemoteVersions();
+  }
+}
+
+function getConfigVersions(){
+  readConfigXml();
+}
+
+function readConfigXml(){
+    logger.debug("Finding configured plugins");
+
+    var xml = fs.readFileSync(path.resolve(CONFIG_FILE), 'utf-8');
+    xml2js(xml, function(err, js){
+        if(err){
+            return handleError(err);
+        }
+        var _plugins = js['widget']['plugin'];
+        if(_plugins && _plugins.length > 0){
+            _plugins.forEach(function(_plugin){
+              _plugin = _plugin.$;
+                var name = _plugin.name;
+                var version = _plugin.spec || _plugin.version;
+                var found = false;
+                if(!_.isNil(plugins[name])){
+                    plugins[name]['target'] = version;
+                    found = true;
+                }else{
+                    for(var id in plugins){
+                        plugin = plugins[id];
+                        if(plugin.source && plugin.source.type === "registry" && name === plugin.source.id){
+                            plugins[id]['target'] = version;
+                            found = true;
+                            break;
+                        }else if(plugin.source && plugin.source.type === "git" && name.match(plugin.source.url)){
+                            plugins[id]['target'] = version;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if(!found){
+                    logger.warn("Couldn't find installed plugin of name '"+name+"' as specified in config.xml - assuming it's a new addition to the config");
+                    plugins[name] = {
+                      'target': name.match(GITHUB_HTTPS_REGEX) || name.match(GITHUB_GIT_REGEX) ? name : version
+                    }
+                }
+            });
+        }
+        compareVersions();
+    });
+}
+
+
 
 function checkRemoteVersions(){
     var plugin;
@@ -152,7 +221,7 @@ function checkRegistrySource(id, source){
             }else{
                 version = stdout;
             }
-            plugins[id]['remote'] = version.replace('\n','');
+            plugins[id]['target'] = version.replace('\n','');
             checkedRemoteVersion();
         }catch(e){
             handleRemoteVersionCheckError(id, "Exception trying to retrieve remote registry version", err);
@@ -203,7 +272,7 @@ function checkGitSource(id, source){
                 if(err){
                     return handleError(err);
                 }
-                plugins[id]['remote'] = js.plugin.$.version;
+                plugins[id]['target'] = js.plugin.$.version;
                 checkedRemoteVersion();
             });
         });
@@ -229,7 +298,7 @@ function checkLocalSource(id, source){
             if(err){
                 return handleError(err);
             }
-            plugins[id]['remote'] = js.plugin.$.version;
+            plugins[id]['target'] = js.plugin.$.version;
             checkedRemoteVersion();
         });
     }catch(e){
@@ -263,20 +332,20 @@ function compareVersions(){
         for(var id in plugins){
             plugin = plugins[id];
             try{
-                if(!plugin.installed || !plugin.remote){
+                if(!plugin.target || (!plugin.installed && target === "remote" )){
                     plugin.status = "error";
-                }else if(plugin.installed ===  plugin.remote || semver.eq(plugin.installed, plugin.remote)){
+                }else if(plugin.installed ===  plugin.target || semver.eq(plugin.installed, plugin.target)){
                     plugin.status = "equal";
-                }else if(semver.lt(plugin.installed, plugin.remote)) {
-                    plugin.status = "newer-remote";
-                }else if(semver.gt(plugin.installed, plugin.remote)) {
+                }else if(semver.lt(plugin.installed, plugin.target)) {
+                    plugin.status = "newer-target";
+                }else if(semver.gt(plugin.installed, plugin.target)) {
                     plugin.status = "newer-installed";
                 }else{
                     plugin.status = "unknown-mismatch";
                 }
             }catch(e){
                 plugin.status = "error";
-                plugin.error = "Error comparing versions: local version="+plugin.installed+"; remote version="+plugin.remote+"; version error="+ e.message;
+                plugin.error = "Error comparing versions: local version="+plugin.installed+"; target version="+plugin.target+"; version error="+ e.message;
             }
         }
     displayResults();
@@ -289,12 +358,12 @@ function displayResults(){
     // Outdated local
     var outdated = _.filter(plugins, function(plugin, id){
         plugin.id = id;
-        return plugin.status === "newer-remote";
+        return plugin.status === "newer-target";
     });
     if(outdated.length > 0){
         logger.log(getTitle("Plugin update available").green);
         outdated.forEach(function(plugin){
-            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).green);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).green);
         });
     }
 
@@ -305,9 +374,9 @@ function displayResults(){
         return plugin.status === "newer-installed";
     });
     if(newer.length > 0){
-        logger.log(getTitle("Installed plugin version newer than remote default").yellow);
+        logger.log(getTitle("Installed plugin version newer than target default").yellow);
         newer.forEach(function(plugin){
-            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).yellow);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).yellow);
         });
     }
 
@@ -319,7 +388,7 @@ function displayResults(){
     if(unknown.length > 0){
         logger.log(getTitle("Unknown plugin version mismatch").yellow);
         unknown.forEach(function(plugin){
-            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).yellow);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).yellow);
         });
     }
 
@@ -331,7 +400,7 @@ function displayResults(){
     if(error.length > 0){
         logger.log(getTitle("Error checking plugin version").red);
         error.forEach(function(plugin){
-            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote, plugin.error).red);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target, plugin.error).red);
         });
     }
 
@@ -343,7 +412,7 @@ function displayResults(){
     if(equal.length > 0){
         logger.log(getTitle("Up-to-date plugins").grey);
         equal.forEach(function(plugin){
-            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.remote).grey);
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).grey);
         });
     }
 
@@ -386,9 +455,9 @@ function doUpdate(outdated){
                 return logger.warn("Cannot update plugin '"+pluginId+"' as it is not installed in the project");
             }
 
-            if(plugins[pluginId].status !== "newer-remote"){
+            if(plugins[pluginId].status !== "newer-target"){
                 valid = false;
-                return logger.warn("Cannot update plugin '"+pluginId+"' as no newer remote version is available");
+                return logger.warn("Cannot update plugin '"+pluginId+"' as no newer target version is available");
             }
             specifiedPlugins.push(plugins[pluginId]);
         });
@@ -421,7 +490,7 @@ function getTitle(msg){
     return title;
 }
 
-function getPluginSnippet(id, source, installedVersion, remoteVersion, error){
+function getPluginSnippet(id, source, installedVersion, targetVersion, error){
     if(source.type === "git"){
         source = source.url;
     }else if(source.type === "registry"){
@@ -432,18 +501,18 @@ function getPluginSnippet(id, source, installedVersion, remoteVersion, error){
         source = "UNKNOWN";
     }
     installedVersion = installedVersion ? installedVersion : "UNKNOWN";
-    remoteVersion = remoteVersion ? remoteVersion : "UNKNOWN";
+    targetVersion = targetVersion ? targetVersion : "UNKNOWN";
 
-    if(installedVersion === "UNKNOWN" && remoteVersion !== "UNKNOWN"){
+    if(installedVersion === "UNKNOWN" && targetVersion !== "UNKNOWN"){
         installedVersion += " - check plugins/fetch.json for orphaned entries";
-    }else if(remoteVersion === "UNKNOWN" && installedVersion !== "UNKNOWN"){
-        installedVersion += " - check remote source is valid";
+    }else if(targetVersion === "UNKNOWN" && installedVersion !== "UNKNOWN"){
+        installedVersion += " - check target source is valid";
     }
 
     var snippet =  "plugin: "+id+
             "\nsource: "+source+
             "\ninstalled version: "+installedVersion+
-            "\nremote version: "+remoteVersion;
+            "\ntarget version: "+targetVersion;
     if(error){
         snippet += "\nerror: "+error;
     }
@@ -541,7 +610,7 @@ function updatePlugin(plugin, complete){
         }else{
             pluginSource = plugin.source.id;
             if(unconstrainVersions && pluginSource.match('@')){
-                pluginSource = pluginSource.split('@')[0] + '@' + plugin.remote;
+                pluginSource = pluginSource.split('@')[0] + '@' + plugin.target;
             }
         }
         var args = '';
@@ -598,7 +667,7 @@ function updatePlugins(plugins, cb){
 
 function updatedPlugin(plugin, result){
     if(result === 0){
-        logger.log("\nUpdated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.remote);
+        logger.log("\nUpdated '"+plugin.id+"'"+" from "+plugin.installed+" to "+plugin.target);
     }else{
         var msg = "Failed to update plugin '"+plugin.id+"'";
         logger.error(msg);
@@ -710,30 +779,6 @@ function help(){
 
 }
 
-/***********
- * Logging
- ***********/
-var logger = {
-    log: function(msg){
-        console.log(msg);
-    },
-    warn: function(msg){
-        console.warn(msg.yellow);
-    },
-    error: function(msg){
-        console.warn(msg.red);
-    },
-    debug: function(msg){
-        if(!verbose) return;
-        if(spinning) msg = '\n'+msg;
-        logger.log(msg.cyan);
-    },
-    dump: function (obj){
-        var util = require('util');
-        logger.log(util.inspect(obj));
-    }
-};
-
 
 /**************************
  * Global exception handler
@@ -784,9 +829,12 @@ function run(){
         if(cliArgs["save"]){
             save = true;
         }
+
+        target = cliArgs["target"] === "config" ? "config" : "remote";
+
         Spinner.setDefaultSpinnerString('|/-\\');
 
-        readJson();
+        start();
     }catch(e){
         handleFatalException(e);
     }
