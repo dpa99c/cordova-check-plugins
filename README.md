@@ -1,4 +1,4 @@
-cordova-check-plugins [![Build Status](https://travis-ci.org/dpa99c/cordova-check-plugins.png)](https://travis-ci.org/dpa99c/cordova-check-plugins) [![Latest Stable Version](https://img.shields.io/npm/v/cordova-check-plugins.svg)](https://www.npmjs.com/package/cordova-check-plugins) [![Total Downloads](https://img.shields.io/npm/dt/cordova-check-plugins.svg)](https://npm-stat.com/charts.html?package=cordova-check-plugins)
+cordova-check-plugins [![Build Status](https://travis-ci.org/dpa99c/cordova-check-plugins.png?branch=master)](https://travis-ci.org/dpa99c/cordova-check-plugins) [![Latest Stable Version](https://img.shields.io/npm/v/cordova-check-plugins.svg)](https://www.npmjs.com/package/cordova-check-plugins) [![Total Downloads](https://img.shields.io/npm/dt/cordova-check-plugins.svg)](https://npm-stat.com/charts.html?package=cordova-check-plugins)
 =====================
 
 A CLI tool to check for updates / manage updating plugins in Cordova/Phonegap projects.
