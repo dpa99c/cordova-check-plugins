@@ -1,9 +1,18 @@
+/**********
+ * Modules
+ **********/
+
+// Core
 var path = require('path');
 var fs = require('fs');
 
-var fileHelper = require('spec/helper/file.js')();
-var toolHelper = require('spec/helper/tool.js')();
-var logger = require('lib/logger.js')();
+// helper
+var fileHelper = require(path.resolve('spec/helper/file.js'))();
+var toolHelper = require(path.resolve('spec/helper/tool.js'))();
+
+//lib
+var logger = require(path.resolve('lib/logger.js'))();
+
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
@@ -68,11 +77,11 @@ describe("A spec for CLI options", function() {
 
                 var diagnosticPlugin = output.section.updateAvailable['cordova.plugins.diagnostic'];
                 expect(diagnosticPlugin).toBeDefined();
-                expect(diagnosticPlugin['installed version'].match(diagnosticPlugin['remote version'].match(/^\d/))).toBeFalsy();
+                expect(diagnosticPlugin['installed version'].match(diagnosticPlugin['target version'].match(/^\d/))).toBeFalsy();
 
                 var configPlugin = output.section.updateAvailable['cordova-custom-config'];
                 expect(configPlugin).toBeDefined();
-                expect(configPlugin['installed version'].match(configPlugin['remote version'].match(/^\d/))).toBeFalsy();
+                expect(configPlugin['installed version'].match(configPlugin['target version'].match(/^\d/))).toBeFalsy();
 
                 done();
             });

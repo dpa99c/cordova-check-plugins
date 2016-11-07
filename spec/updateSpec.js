@@ -1,10 +1,17 @@
+/**********
+ * Modules
+ **********/
+
+// Core
 var path = require('path');
 var fs = require('fs');
 
-var fileHelper = require('spec/helper/file.js')();
-var toolHelper = require('spec/helper/tool.js')();
-var logger = require('lib/logger.js')();
+// helper
+var fileHelper = require(path.resolve('spec/helper/file.js'))();
+var toolHelper = require(path.resolve('spec/helper/tool.js'))();
 
+//lib
+var logger = require(path.resolve('lib/logger.js'))();
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
 toolHelper.setStaticArgs(
@@ -17,6 +24,16 @@ describe("A spec for updating plugins", function() {
         fileHelper.reset(done);
     });
 
+    it("should save update changes to the config.xml when the '--save' CLI option is supplied", function(done) {
+        fileHelper.addPlugin('cordova-plugin-file', function(err, stdout, stderr){
+            fileHelper.forceLocalPluginVersion('cordova-plugin-file', '1.0.0');
+            expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeFalsy();
+            toolHelper.run('--update=cordova-plugin-file --save', function(err, stdout, stderr, output){
+                expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeTruthy();
+                done();
+            });
+        });
+    });
 
     it("should NOT force the update of dependent plugins when the '--force-update' CLI option is NOT supplied", function(done) {
         fileHelper.addPlugin('cordova-plugin-file-transfer', function(err, stdout, stderr){
@@ -24,7 +41,7 @@ describe("A spec for updating plugins", function() {
 
             toolHelper.run('--update=cordova-plugin-file', function(err, stdout, stderr, output){
                 expect(err).toBeFalsy();
-                expect(stderr).toContain("Error: The plugin 'cordova-plugin-file' is required by (cordova-plugin-file-transfer)");
+                expect(stdout).toContain("Error: The plugin 'cordova-plugin-file' is required by (cordova-plugin-file-transfer)");
                 expect(stdout).toContain("Failed to update all specified plugins");
                 done();
             });
@@ -44,16 +61,6 @@ describe("A spec for updating plugins", function() {
         });
     });
 
-    it("should save update changes to the config.xml when the '--save' CLI option is supplied", function(done) {
-        fileHelper.addPlugin('cordova-plugin-file', function(err, stdout, stderr){
-            fileHelper.forceLocalPluginVersion('cordova-plugin-file', '1.0.0');
-            expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeFalsy();
-            toolHelper.run('--update=cordova-plugin-file --save', function(err, stdout, stderr, output){
-                expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeTruthy();
-                done();
-            });
-        });
-    });
 
     it("should not update any outdated plugins when the '--update=none' CLI option is supplied", function(done) {
         fileHelper.addPlugins([
@@ -166,7 +173,7 @@ describe("A spec for updating plugins", function() {
 
             toolHelper.run('--update="cordova-plugin-device cordova.plugins.diagnostic"', function(err, stdout, stderr, output){
                 expect(err).toBeFalsy();
-                expect(stderr).toContain("Cannot update plugin 'cordova-plugin-device' as it is not installed in the project");
+                expect(stdout).toContain("Cannot update plugin 'cordova-plugin-device' as it is not installed in the project");
                 expect(output.section.updateAvailable['cordova.plugins.diagnostic']).toBeDefined();
 
                 fileHelper.listPlugins(function(plugins){
@@ -188,7 +195,7 @@ describe("A spec for updating plugins", function() {
 
             toolHelper.run('--update="cordova-plugin-device cordova.plugins.diagnostic"', function(err, stdout, stderr, output){
                 expect(err).toBeFalsy();
-                expect(stderr).toContain("Cannot update plugin 'cordova-plugin-device' as no newer remote version is available");
+                expect(stdout).toContain("Cannot update plugin 'cordova-plugin-device' as no newer target version is available");
                 expect(output.section.updateAvailable['cordova.plugins.diagnostic']).toBeDefined();
                 expect(output.section.upToDate['cordova-plugin-device']).toBeDefined();
 
@@ -201,7 +208,3 @@ describe("A spec for updating plugins", function() {
         });
     });
 });
-
-
-
-

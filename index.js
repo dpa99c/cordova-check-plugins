@@ -3,28 +3,32 @@
 /**********
  * Modules
  **********/
+
+// Core
+var path = require('path');
+
 // lib
-var logger = require('lib/logger.js')();
-var update = require('lib/update.js')();
-var errorHandler = require('lib/errorHandler.js')();
-var progress = require('lib/progress.js')();
+var logger = require(path.resolve('lib/logger.js'))();
+var update = require(path.resolve('lib/update.js'))();
+var errorHandler = require(path.resolve('lib/errorHandler.js'))();
+var progress = require(path.resolve('lib/progress.js'))();
+var cliArgs = require(path.resolve('lib/cliArgs.js'))().args;
 
 // 3rd party
 try{
-    var path = require('path'),
-        fs = require('fs-extra'),
-        colors = require('colors'),
-        jsonfile = require('jsonfile'),
-        exec = require('child_process').exec,
-        minimist = require('minimist'),
-        github = require('octonode'),
-        Base64 = require('js-base64').Base64,
-        _ = require('lodash'),
-        semver = require('semver'),
-        cordovaCommon = require('cordova-common'),
-        PluginInfoProvider = cordovaCommon.PluginInfoProvider,
-        pluginInfoProvider = new PluginInfoProvider(),
-        xml2js = require('xml2js').parseString;
+    var fs = require('fs-extra');
+    var colors = require('colors');
+    var jsonfile = require('jsonfile');
+    var exec = require('child_process').exec;
+    var github = require('octonode');
+    var Base64 = require('js-base64').Base64;
+    var _ = require('lodash');
+    var semver = require('semver');
+    var cordovaCommon = require('cordova-common');
+    var PluginInfoProvider = cordovaCommon.PluginInfoProvider;
+    var pluginInfoProvider = new PluginInfoProvider();
+    var xml2js = require('xml2js').parseString;
+
 }catch(e){
     errorHandler.handleFatalException(e, "Failed to acquire module dependencies");
 }
@@ -44,7 +48,6 @@ var PLUGINS_DIR = './plugins/',
  ******************/
 var verbose = false,
     unconstrainVersions = false,
-    save = false,
     updateMode = null,
     cliArgs,
     plugins = {},
@@ -59,7 +62,7 @@ function start(){
 
 function readJson(){
 
-    logger.debug("Finding installed plugins");
+    logger.verbose("Finding installed plugins");
     progress.start("Checking local versions");
     jsonfile.readFile(FETCH_FILE, function(err, json){
         try{
@@ -83,7 +86,7 @@ function readJson(){
 }
 
 function getInstalledVersions(){
-    logger.debug("Reading installed plugin versions");
+    logger.verbose("Reading installed plugin versions");
     var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(PLUGINS_DIR);
 
     installedPlugins.forEach(function(plugin){
@@ -111,7 +114,7 @@ function getConfigVersions(){
 }
 
 function readConfigXml(){
-    logger.debug("Finding configured plugins");
+    logger.verbose("Finding configured plugins");
 
     var xml = fs.readFileSync(path.resolve(CONFIG_FILE), 'utf-8');
     xml2js(xml, function(err, js){
@@ -146,7 +149,7 @@ function readConfigXml(){
                     logger.warn("Couldn't find installed plugin of name '"+name+"' as specified in config.xml - assuming it's a new addition to the config");
                     plugins[name] = {
                       'target': name.match(GITHUB_HTTPS_REGEX) || name.match(GITHUB_GIT_REGEX) ? name : version
-                    }
+                    };
                 }
             });
         }
@@ -191,7 +194,7 @@ function handleRemoteVersionCheckError(id, msg, err){
 
 function checkRegistrySource(id, source){
     var idToCheck = unconstrainVersions ? source.id.replace(/(@([^~]?).*)$/, '') : source.id;
-    logger.debug("Checking latest npm registry version for '"+id+"' using '"+idToCheck+"'");
+    logger.verbose("Checking latest npm registry version for '"+id+"' using '"+idToCheck+"'");
     var command = 'npm view "'+idToCheck+'" version';
     logger.debug(command);
 
@@ -201,7 +204,7 @@ function checkRegistrySource(id, source){
                 handleRemoteVersionCheckError(id, "Failed to check npm registry", err);
                 return -1;
             }
-            logger.debug("Retrieved latest npm registry version for '"+id);
+            logger.verbose("Retrieved latest npm registry version for '"+id);
             var version;
             if(stdout.match('@')){
                 var versions = stdout.split('\n');
@@ -238,7 +241,7 @@ function checkGitSource(id, source){
             if(cliArgs["github-username"] && cliArgs["github-password"]){
                 ghOpts.username = cliArgs["github-username"];
                 ghOpts.password = cliArgs["github-password"];
-                logger.debug("Using specified GitHub credentials to authenticate access to the GitHub API");
+                logger.verbose("Using specified GitHub credentials to authenticate access to the GitHub API");
             }
             ghClient = github.client(ghOpts);
         }
@@ -255,7 +258,7 @@ function checkGitSource(id, source){
             ref = source.ref,
             ghrepo = ghClient.repo(user+'/'+repo);
 
-        logger.debug("Checking latest github version for '"+id+"' using '"+source.url+(source.ref ? "#"+source.ref : "")+"'");
+        logger.verbose("Checking latest github version for '"+id+"' using '"+source.url+(source.ref ? "#"+source.ref : "")+"'");
         ghrepo.contents('plugin.xml', ref, function(err, data){
             if(err){
                 if(err.toString().match("Not Found")){
@@ -263,7 +266,7 @@ function checkGitSource(id, source){
                 }
                 return handleError(err);
             }
-            logger.debug("Retrieved latest github version for '"+id);
+            logger.verbose("Retrieved latest github version for '"+id);
             var xml = Base64.decode(data.content);
 
             xml2js(xml, function(err, js){
@@ -415,7 +418,12 @@ function displayResults(){
     }
 
     if(outdated.length > 0){
-        update.doUpdate(outdated);
+        update.doUpdate(plugins, outdated, {
+            updateMode: updateMode,
+            unconstrainVersions: unconstrainVersions,
+            save: cliArgs["save"],
+            forceUpdate: cliArgs["force-update"]
+        });
     }
 }
 
@@ -517,10 +525,7 @@ function help(){
  ***********/
 function run(){
     try{
-        logger.debug("Running cordova-check-plugins...");
-
-        // Setup
-        cliArgs = minimist(process.argv.slice(2));
+        logger.verbose("Running cordova-check-plugins...");
 
         if(cliArgs["v"] || cliArgs["version"]){
             return logger.log(require('./package.json').version);
@@ -532,17 +537,14 @@ function run(){
 
         if(cliArgs["verbose"]){
             verbose = true;
-            logger.debug("Verbose output enabled");
+            logger.verbose("Verbose output enabled");
         }
         if(cliArgs["unconstrain-versions"]){
             unconstrainVersions = true;
-            logger.debug("Unconstraining version checks: highest remote version will be displayed regardless of locally specified version");
+            logger.verbose("Unconstraining version checks: highest remote version will be displayed regardless of locally specified version");
         }
         if(cliArgs["update"]){
             updateMode = cliArgs["update"];
-        }
-        if(cliArgs["save"]){
-            save = true;
         }
 
         target = cliArgs["target"] === "config" ? "config" : "remote";

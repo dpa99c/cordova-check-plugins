@@ -1,10 +1,17 @@
+/**********
+ * Modules
+ **********/
 
+// Core
 var path = require('path');
 var fs = require('fs');
 
-var fileHelper = require('spec/helper/file.js')();
-var toolHelper = require('spec/helper/tool.js')();
-var logger = require('lib/logger.js')();
+// helper
+var fileHelper = require(path.resolve('spec/helper/file.js'))();
+var toolHelper = require(path.resolve('spec/helper/tool.js'))();
+
+//lib
+var logger = require(path.resolve('lib/logger.js'))();
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
@@ -61,22 +68,22 @@ describe("A spec for plugin source format", function() {
     it("should handle plugin sources in the format 'uk.co.workingedge.phonegap.plugin.launchnavigator@2'", function() {
         var plugin = output.section.updateAvailable['uk.co.workingedge.phonegap.plugin.launchnavigator'];
         expect(plugin).toBeDefined();
-        expect(plugin['installed version'].match(plugin['remote version'].match(/^\d/))).toBeTruthy();
-        expect(plugin['installed version'].match(plugin['remote version'].match(/^\d\.\d/))).toBeFalsy();
-        expect(plugin['installed version'].match(plugin['remote version'].match(/^\d\.\d\.\d/))).toBeFalsy();
+        expect(plugin['installed version'].match(plugin['target version'].match(/^\d/))).toBeTruthy();
+        expect(plugin['installed version'].match(plugin['target version'].match(/^\d\.\d/))).toBeFalsy();
+        expect(plugin['installed version'].match(plugin['target version'].match(/^\d\.\d\.\d/))).toBeFalsy();
     });
     it("should handle plugin sources in the format 'cordova.plugins.diagnostic@~2.0.0'", function() {
         var plugin = output.section.updateAvailable['cordova.plugins.diagnostic'];
         expect(plugin).toBeDefined();
-        expect(plugin['installed version'].match(plugin['remote version'].match(/^\d\.\d/))).toBeTruthy();
-        expect(plugin['installed version'].match(plugin['remote version'].match(/^\d\.\d\.\d/))).toBeFalsy();
+        expect(plugin['installed version'].match(plugin['target version'].match(/^\d\.\d/))).toBeTruthy();
+        expect(plugin['installed version'].match(plugin['target version'].match(/^\d\.\d\.\d/))).toBeFalsy();
     });
     it("should handle plugin sources in the format 'cordova-custom-config@^1.0.0'", function() {
         var plugin = output.section.updateAvailable['cordova-custom-config'];
         expect(plugin).toBeDefined();
-        expect(plugin['installed version'].match(plugin['remote version'].match(/^\d/))).toBeTruthy();
-        expect(plugin['installed version'].match(plugin['remote version'].match(/^\d\.\d/))).toBeFalsy();
-        expect(plugin['installed version'].match(plugin['remote version'].match(/^\d\.\d\.\d/))).toBeFalsy();
+        expect(plugin['installed version'].match(plugin['target version'].match(/^\d/))).toBeTruthy();
+        expect(plugin['installed version'].match(plugin['target version'].match(/^\d\.\d/))).toBeFalsy();
+        expect(plugin['installed version'].match(plugin['target version'].match(/^\d\.\d\.\d/))).toBeFalsy();
     });
     it("should handle plugin sources in the format 'https://github.com/apache/cordova-plugin-network-information'", function() {
         expect(output.section.upToDate['cordova-plugin-network-information']).toBeDefined();

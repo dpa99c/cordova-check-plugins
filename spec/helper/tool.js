@@ -5,8 +5,11 @@ var toolHelper = (function(){
     /**********************
      * Modules
      *********************/
-    var exec = require('child_process').exec;
+    // Core
     var path = require('path');
+    var exec = require('child_process').exec;
+
+    // lib
     var logger = require(path.resolve('lib/logger.js'))();
 
     /**********************
@@ -78,7 +81,7 @@ var toolHelper = (function(){
             section:{
                 updateAvailable: getSection('Plugin update available'),
                 upToDate: getSection('Up-to-date plugins'),
-                installedNewer: getSection('Installed plugin version newer than remote default'),
+                installedNewer: getSection('Installed plugin version newer than target default'),
                 unknownVersion: getSection('Unknown plugin version mismatch'),
                 error: getSection('Error checking plugin version')
             }

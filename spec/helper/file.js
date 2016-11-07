@@ -2,15 +2,27 @@
 
 var fileHelper = (function(){
 
+    /**********
+     * Modules
+     **********/
+    // Core
+    var path = require('path');
+    var exec = require('child_process').exec;
+
+    // lib
+    var logger = require(path.resolve('lib/logger.js'))();
+
+    // 3rd party
+    try{
+        var fs = require('fs-extra');
+    }catch(e){
+        errorHandler.handleFatalException(e, "Failed to acquire module dependencies");
+    }
+
     /**********************
      * Internal properties
      *********************/
     var fileHelper;
-
-    var fs = require('fs-extra');
-    var path = require('path');
-    var exec = require('child_process').exec;
-    var logger = require(path.resolve('lib/logger.js'))();
 
     /************
      * Public API
@@ -33,7 +45,7 @@ var fileHelper = (function(){
                             id: id,
                             version: version,
                             title: fields.join(' ').replace(/[\r\"]/g,'')
-                        }
+                        };
                     });
                 }
                 onFinish(plugins, 0, stderr);
@@ -90,7 +102,7 @@ var fileHelper = (function(){
                 if(pluginSource){
                     results[pluginSource] = [err, stdout, stderr];
                 }
-                if(pluginSources.length == 0) return onFinish(results);
+                if(pluginSources.length === 0) return onFinish(results);
 
                 var pluginSource = pluginSources.shift();
                 fileHelper.addPlugin(pluginSource, addNextPlugin.bind(this, pluginSource), opts);
@@ -116,7 +128,7 @@ var fileHelper = (function(){
                 if(pluginId){
                     results[pluginId] = [err, stdout, stderr];
                 }
-                if(pluginIds.length == 0) return onFinish(results);
+                if(pluginIds.length === 0) return onFinish(results);
 
                 var pluginId = pluginIds.shift();
                 fileHelper.removePlugin(pluginId, doNextPlugin.bind(this, pluginId), opts);
@@ -126,7 +138,7 @@ var fileHelper = (function(){
         removeAllPlugins: function(onFinish, opts){
             fileHelper.listPlugins(function(plugins){
                 var pluginIds = [];
-                for(pluginId in plugins){
+                for(var pluginId in plugins){
                     pluginIds.push(pluginId);
                 }
                 fileHelper.removePlugins(pluginIds, onFinish, opts);

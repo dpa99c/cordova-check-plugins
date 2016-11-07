@@ -1,6 +1,6 @@
 {
   "name": "cordova-check-plugins",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "A CLI tool to check for updates / manage updating Cordova plugins.",
   "main": "index.js",
   "author": "Dave Alden",
@@ -44,6 +44,6 @@
   },
   "scripts": {
     "test": "npm install && npm run-script jshint && jasmine",
-    "jshint": "jshint index.js"
+    "jshint": "jshint index.js lib spec"
   }
 }
