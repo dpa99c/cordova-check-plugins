@@ -10,7 +10,7 @@ var toolHelper = (function(){
     var exec = require('child_process').exec;
 
     // lib
-    var logger = require(path.resolve('lib/logger.js'))();
+    var logger = require('../../lib/logger.js')();
 
     /**********************
      * Internal properties
@@ -39,17 +39,18 @@ var toolHelper = (function(){
 
     toolHelper.run = function(args, onFinish){
         args = args || '';
+        var target = args.match('target=config') ? 'config' : 'remote';
         var command = "node index.js " + args + ' ' + staticArgs;
         logger.log("Running tool: "+toolHelper.obfuscateCliArgs(command));
         exec(command, function(err, stdout, stderr) {
             if(err){
                 return onFinish(-1, stdout, stderr);
             }
-            onFinish(0, stdout, stderr, toolHelper.parseOutput(stdout));
+            onFinish(0, stdout, stderr, toolHelper.parseOutput(stdout, target));
         });
     };
 
-    toolHelper.parseOutput = function(stdout){
+    toolHelper.parseOutput = function(stdout, target){
         function getSection(title){
             var section = stdout.match(getSectionRegExp(title));
             section = section ? section[1] : false;
@@ -79,13 +80,17 @@ var toolHelper = (function(){
 
         var result = {
             section:{
-                updateAvailable: getSection('Plugin update available'),
-                upToDate: getSection('Up-to-date plugins'),
-                installedNewer: getSection('Installed plugin version newer than target default'),
+                newerTarget: getSection(target === 'config' ? "Config version newer than installed" : "Plugin update available"),
+                upToDate: getSection("Up-to-date plugins"),
+                newerInstalled: getSection(target === 'config' ? "Config version older than installed" : "Installed plugin version newer than remote default"),
                 unknownVersion: getSection('Unknown plugin version mismatch'),
                 error: getSection('Error checking plugin version')
             }
         };
+        if(target === 'config'){
+            result.section.newTarget = getSection("New plugins in config.xml (not installed locally)");
+            result.section.newInstalled = getSection("Locally installed plugins not in config.xml");
+        }
         return result;
     };
     return toolHelper;

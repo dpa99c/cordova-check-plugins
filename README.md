@@ -127,7 +127,9 @@ Without it, only the "parent" plugin - in this case `cordova-plugin-file-transfe
 
 ### --save
 
-Save changes to the config.xml
+Save changes to the config.xml when updating plugins.
+The new version number of the updated plugin will be saved in a `<plugin>` tag.
+This is the same as doing `cordova plugin add cordova-plugin-foo --save` when adding a plugin manually.
 
     $ cordova-check-plugins --update=auto --force-update --save
 
@@ -139,6 +141,26 @@ When checking remote versions for that are hosted on GitHub, by default unauthen
 This is [rate limited](https://developer.github.com/v3/#rate-limiting) to 60 requests/hour.
 For most users, this should be sufficient, but if this module is used in a Continuous Integration environment with a project using multiple GitHub-hosted plugins, that rate can be exceeded.
 By specifying valid GitHub user credentials, these will be used when communicating with the GitHub API, which increases the number of allowed requests to 5000 requests/hour.
+
+    $ cordova-check-plugins --github-username=myUsername --github-password=myPassword
+
+### --target
+
+Sets the target to use for establishing if installed plugins are up-to-date.
+
+Valid values are:
+
+- `remote` - (default) installed plugin versions will be compared to available versions in the remote source (e.g npm registry, git repo, local folder).
+- `config` - installed plugin versions will be to compared to the versions specified in `<plugin>` elements in the config.xml file.
+
+
+    $ cordova-check-plugins --target=config
+
+Setting `--target=config` is useful if you want to keep locally installed plugins in sync with the versions specified in the config.xml, rather than the newest remote versions.
+
+### --allow-downdate
+
+If the installed plugin version is newer than the version specified in the config.xml, allow the plugin to be downgraded to the version specified in the config.xml. Only applies if `--target=config`.
 
 License
 ================

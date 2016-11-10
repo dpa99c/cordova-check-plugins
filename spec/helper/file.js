@@ -10,7 +10,7 @@ var fileHelper = (function(){
     var exec = require('child_process').exec;
 
     // lib
-    var logger = require(path.resolve('lib/logger.js'))();
+    var logger = require('../../lib/logger.js')();
 
     // 3rd party
     try{

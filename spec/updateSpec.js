@@ -7,11 +7,11 @@ var path = require('path');
 var fs = require('fs');
 
 // helper
-var fileHelper = require(path.resolve('spec/helper/file.js'))();
-var toolHelper = require(path.resolve('spec/helper/tool.js'))();
+var fileHelper = require('./helper/file.js')();
+var toolHelper = require('./helper/tool.js')();
 
 //lib
-var logger = require(path.resolve('lib/logger.js'))();
+var logger = require('../lib/logger.js')();
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
 toolHelper.setStaticArgs(
@@ -72,8 +72,8 @@ describe("A spec for updating plugins", function() {
             fileHelper.forceLocalPluginVersion('cordova-plugin-device', '1.0.0');
 
             toolHelper.run('--update=none', function(err, stdout, stderr, output){
-                expect(output.section.updateAvailable['cordova.plugins.diagnostic']).toBeDefined();
-                expect(output.section.updateAvailable['cordova-plugin-device']).toBeDefined();
+                expect(output.section.newerTarget['cordova.plugins.diagnostic']).toBeDefined();
+                expect(output.section.newerTarget['cordova-plugin-device']).toBeDefined();
                 fileHelper.listPlugins(function(plugins){
                     expect(plugins['cordova.plugins.diagnostic'].version === '2.0.0').toBeTruthy();
                     expect(plugins['cordova-plugin-device'].version === '1.0.0').toBeTruthy();
@@ -94,8 +94,8 @@ describe("A spec for updating plugins", function() {
             fileHelper.forceLocalPluginVersion('cordova-plugin-device', '1.0.0');
 
             toolHelper.run('--update=auto', function(err, stdout, stderr, output){
-                expect(output.section.updateAvailable['cordova.plugins.diagnostic']).toBeDefined();
-                expect(output.section.updateAvailable['cordova-plugin-device']).toBeDefined();
+                expect(output.section.newerTarget['cordova.plugins.diagnostic']).toBeDefined();
+                expect(output.section.newerTarget['cordova-plugin-device']).toBeDefined();
 
                 fileHelper.listPlugins(function(plugins){
                     expect(plugins['cordova.plugins.diagnostic'].version === '2.0.0').toBeFalsy();
@@ -121,8 +121,8 @@ describe("A spec for updating plugins", function() {
             fileHelper.forceLocalPluginVersion('cordova-plugin-device', '1.0.0');
 
             toolHelper.run('--update=cordova.plugins.diagnostic', function(err, stdout, stderr, output){
-                expect(output.section.updateAvailable['cordova.plugins.diagnostic']).toBeDefined();
-                expect(output.section.updateAvailable['cordova-plugin-device']).toBeDefined();
+                expect(output.section.newerTarget['cordova.plugins.diagnostic']).toBeDefined();
+                expect(output.section.newerTarget['cordova-plugin-device']).toBeDefined();
 
                 fileHelper.listPlugins(function(plugins){
                     expect(plugins['cordova.plugins.diagnostic'].version === '2.0.0').toBeFalsy();
@@ -147,9 +147,9 @@ describe("A spec for updating plugins", function() {
             fileHelper.forceLocalPluginVersion('cordova-custom-config', '1.0.0');
 
             toolHelper.run('--update="cordova.plugins.diagnostic cordova-plugin-device"', function(err, stdout, stderr, output){
-                expect(output.section.updateAvailable['cordova.plugins.diagnostic']).toBeDefined();
-                expect(output.section.updateAvailable['cordova-plugin-device']).toBeDefined();
-                expect(output.section.updateAvailable['cordova-custom-config']).toBeDefined();
+                expect(output.section.newerTarget['cordova.plugins.diagnostic']).toBeDefined();
+                expect(output.section.newerTarget['cordova-plugin-device']).toBeDefined();
+                expect(output.section.newerTarget['cordova-custom-config']).toBeDefined();
 
                 fileHelper.listPlugins(function(plugins){
                     expect(plugins['cordova.plugins.diagnostic'].version === '2.0.0').toBeFalsy();
@@ -174,7 +174,7 @@ describe("A spec for updating plugins", function() {
             toolHelper.run('--update="cordova-plugin-device cordova.plugins.diagnostic"', function(err, stdout, stderr, output){
                 expect(err).toBeFalsy();
                 expect(stdout).toContain("Cannot update plugin 'cordova-plugin-device' as it is not installed in the project");
-                expect(output.section.updateAvailable['cordova.plugins.diagnostic']).toBeDefined();
+                expect(output.section.newerTarget['cordova.plugins.diagnostic']).toBeDefined();
 
                 fileHelper.listPlugins(function(plugins){
                     expect(plugins['cordova.plugins.diagnostic'].version === '2.0.0').toBeFalsy();
@@ -196,7 +196,7 @@ describe("A spec for updating plugins", function() {
             toolHelper.run('--update="cordova-plugin-device cordova.plugins.diagnostic"', function(err, stdout, stderr, output){
                 expect(err).toBeFalsy();
                 expect(stdout).toContain("Cannot update plugin 'cordova-plugin-device' as no newer target version is available");
-                expect(output.section.updateAvailable['cordova.plugins.diagnostic']).toBeDefined();
+                expect(output.section.newerTarget['cordova.plugins.diagnostic']).toBeDefined();
                 expect(output.section.upToDate['cordova-plugin-device']).toBeDefined();
 
                 fileHelper.listPlugins(function(plugins){

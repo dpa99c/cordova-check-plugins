@@ -6,28 +6,26 @@
 
 // Core
 var path = require('path');
+var exec = require('child_process').exec;
 
 // lib
-var logger = require(path.resolve('lib/logger.js'))();
-var update = require(path.resolve('lib/update.js'))();
-var errorHandler = require(path.resolve('lib/errorHandler.js'))();
-var progress = require(path.resolve('lib/progress.js'))();
-var cliArgs = require(path.resolve('lib/cliArgs.js'))().args;
+var logger = require('./lib/logger.js')();
+var update = require('./lib/update.js')();
+var errorHandler = require('./lib/errorHandler.js')();
+var progress = require('./lib/progress.js')();
+var cliArgs = require('./lib/cliArgs.js')().args;
+var config = require('./lib/config.js')();
+var remote = require('./lib/remote.js')();
 
 // 3rd party
 try{
     var fs = require('fs-extra');
     var colors = require('colors');
     var jsonfile = require('jsonfile');
-    var exec = require('child_process').exec;
-    var github = require('octonode');
-    var Base64 = require('js-base64').Base64;
     var _ = require('lodash');
-    var semver = require('semver');
     var cordovaCommon = require('cordova-common');
     var PluginInfoProvider = cordovaCommon.PluginInfoProvider;
     var pluginInfoProvider = new PluginInfoProvider();
-    var xml2js = require('xml2js').parseString;
 
 }catch(e){
     errorHandler.handleFatalException(e, "Failed to acquire module dependencies");
@@ -37,23 +35,19 @@ try{
 /***********
  * Constants
  ***********/
-var PLUGINS_DIR = './plugins/',
-    FETCH_FILE = PLUGINS_DIR + 'fetch.json',
-    CONFIG_FILE = './config.xml',
-    GITHUB_HTTPS_REGEX = /^https:\/\/(?:\w*:?\w*@?)github\.com\/([^\/]+)\/([^\/.]+)(?:\.git)?$/,
-    GITHUB_GIT_REGEX = /^git:\/\/(?:\w*:?\w*@?)github\.com\/([^\/]+)\/([^\/.]+)(?:\.git)?$/;
+var PLUGINS_DIR = './plugins/';
+var FETCH_FILE = PLUGINS_DIR + 'fetch.json';
+
 
 /******************
  * Global variables
  ******************/
-var verbose = false,
-    unconstrainVersions = false,
-    updateMode = null,
-    cliArgs,
-    plugins = {},
+var verbose = false;
+var unconstrainVersions = false;
+var updateMode = null;
+var plugins = {};
+var cliArgs,
     pluginCount,
-    checkCount,
-    ghClient,
     target;
 
 function start(){
@@ -102,281 +96,70 @@ function getInstalledVersions(){
 
 
 function getTargetVersions(){
-  if(target === "config"){
-    getConfigVersions();
-  }else{
-    checkRemoteVersions();
-  }
-}
-
-function getConfigVersions(){
-  readConfigXml();
-}
-
-function readConfigXml(){
-    logger.verbose("Finding configured plugins");
-
-    var xml = fs.readFileSync(path.resolve(CONFIG_FILE), 'utf-8');
-    xml2js(xml, function(err, js){
-        if(err){
-            return handleError(err);
-        }
-        var _plugins = js['widget']['plugin'];
-        if(_plugins && _plugins.length > 0){
-            _plugins.forEach(function(_plugin){
-              _plugin = _plugin.$;
-                var name = _plugin.name;
-                var version = _plugin.spec;
-                var found = false;
-                if(!_.isNil(plugins[name])){
-                    plugins[name]['target'] = version;
-                    found = true;
-                }else{
-                    for(var id in plugins){
-                        plugin = plugins[id];
-                        if(plugin.source && plugin.source.type === "registry" && name === plugin.source.id){
-                            plugins[id]['target'] = version;
-                            found = true;
-                            break;
-                        }else if(plugin.source && plugin.source.type === "git" && name.match(plugin.source.url)){
-                            plugins[id]['target'] = version;
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if(!found){
-                    logger.warn("Couldn't find installed plugin of name '"+name+"' as specified in config.xml - assuming it's a new addition to the config");
-                    plugins[name] = {
-                      'target': name.match(GITHUB_HTTPS_REGEX) || name.match(GITHUB_GIT_REGEX) ? name : version
-                    };
-                }
-            });
-        }
-        compareVersions();
+    var targetModule = target === "config" ? config : remote;
+    targetModule.check({
+        plugins: plugins, 
+        onFinish: displayResults,
+        pluginCount: pluginCount,
+        unconstrainVersions: unconstrainVersions
     });
-}
-
-
-
-function checkRemoteVersions(){
-    var plugin;
-    checkCount = 0;
-    progress.end();
-    progress.start("Checking remote versions");
-    for(var id in plugins){
-        plugin = plugins[id];
-        if(plugin.source.type === "registry"){
-            checkRegistrySource(id, plugin.source);
-        }else if(plugin.source.type === "git"){
-            checkGitSource(id, plugin.source);
-        }else if(plugin.source.type === "local"){
-            checkLocalSource(id, plugin.source);
-        }else{
-            var msg = "Plugin '"+id+"' has source.type='"+plugin.source.type+"' which is currently not supported";
-            plugin.error = msg;
-            logger.log(msg.yellow);
-            checkedRemoteVersion(); // continue
-        }
-    }
-}
-
-function handleRemoteVersionCheckError(id, msg, err){
-    msg += " for plugin '"+id+"'";
-    plugins[id]['error'] = msg;
-    if(err){
-        plugins[id]['error'] += ": "+ err;
-        msg += "\n\n" + err;
-    }
-    logger.error(msg);
-    checkedRemoteVersion(); // continue
-}
-
-function checkRegistrySource(id, source){
-    var idToCheck = unconstrainVersions ? source.id.replace(/(@([^~]?).*)$/, '') : source.id;
-    logger.verbose("Checking latest npm registry version for '"+id+"' using '"+idToCheck+"'");
-    var command = 'npm view "'+idToCheck+'" version';
-    logger.debug(command);
-
-    exec(command, function(err, stdout, stderr) {
-        try{
-            if(err){
-                handleRemoteVersionCheckError(id, "Failed to check npm registry", err);
-                return -1;
-            }
-            logger.verbose("Retrieved latest npm registry version for '"+id);
-            var version;
-            if(stdout.match('@')){
-                var versions = stdout.split('\n');
-                while (versions.length) {
-                    version = versions.pop() || "";
-                    version = version.match(/'([^']+)'/);
-                    if (version && version.length > 0 && version[1]) {
-                        version = version[1];
-                        break;
-                    }
-                }
-                if(!version){
-                    handleRemoteVersionCheckError(id, "Couldn't determine a remote registry version");
-                }
-            }else{
-                version = stdout;
-            }
-            plugins[id]['target'] = version.replace('\n','');
-            checkedRemoteVersion();
-        }catch(e){
-            handleRemoteVersionCheckError(id, "Exception trying to retrieve remote registry version", err);
-        }
-    });
-}
-
-function checkGitSource(id, source){
-    function handleError(err){
-        handleRemoteVersionCheckError(id, "Failed to read version from github repo", err);
-    }
-
-    try{
-        if(!ghClient){
-            var ghOpts = {};
-            if(cliArgs["github-username"] && cliArgs["github-password"]){
-                ghOpts.username = cliArgs["github-username"];
-                ghOpts.password = cliArgs["github-password"];
-                logger.verbose("Using specified GitHub credentials to authenticate access to the GitHub API");
-            }
-            ghClient = github.client(ghOpts);
-        }
-        if(source.url.match(GITHUB_GIT_REGEX)){
-            source.url = parseGitProtocolUrl(source.url);
-        }
-        if(!source.url.match(GITHUB_HTTPS_REGEX)){
-            return handleError("source.url '"+source.url+"' is not a valid github repo URL in the form 'https://github.com/username/reponame' or 'git://github.com/username/reponame.git'");
-        }
-        source.url = source.url.replace(/\.git/, '');
-        var parts = source.url.match(GITHUB_HTTPS_REGEX),
-            user = parts[1],
-            repo = parts[2],
-            ref = source.ref,
-            ghrepo = ghClient.repo(user+'/'+repo);
-
-        logger.verbose("Checking latest github version for '"+id+"' using '"+source.url+(source.ref ? "#"+source.ref : "")+"'");
-        ghrepo.contents('plugin.xml', ref, function(err, data){
-            if(err){
-                if(err.toString().match("Not Found")){
-                    err = "plugin.xml not found - make sure the specified repo contains a Cordova plugin";
-                }
-                return handleError(err);
-            }
-            logger.verbose("Retrieved latest github version for '"+id);
-            var xml = Base64.decode(data.content);
-
-            xml2js(xml, function(err, js){
-                if(err){
-                    return handleError(err);
-                }
-                plugins[id]['target'] = js.plugin.$.version;
-                checkedRemoteVersion();
-            });
-        });
-    }catch(e){
-        handleError("Exception occurred: "+e.message);
-    }
-}
-
-function checkLocalSource(id, source){
-    function handleError(err){
-        handleRemoteVersionCheckError(id, "Failed to read version from local source", err);
-    }
-
-    try{
-        var fileContents;
-        try{
-            fileContents = fs.readFileSync(source.path+"/plugin.xml", 'utf-8');
-        }catch(e){
-            return handleError("plugin.xml not found - make sure the specified local source contains a Cordova plugin");
-        }
-
-        xml2js(fileContents, function(err, js){
-            if(err){
-                return handleError(err);
-            }
-            plugins[id]['target'] = js.plugin.$.version;
-            checkedRemoteVersion();
-        });
-    }catch(e){
-        handleError("Exception occurred: "+e.message);
-    }
-}
-
-/**
- * Parses a git URL in the form git://github.com/some/repo.git#r1.0.0 and returns it as https equivalent
- * @param {string} gitUrl - URL using git:// protocol
- * @return {string} equivalent URL using https:// protocol
- */
-function parseGitProtocolUrl(gitUrl){
-    var parts = gitUrl.match(GITHUB_GIT_REGEX),
-        user = parts[1],
-        repo = parts[2];
-    return "https://github.com/"+user+"/"+repo;
-}
-
-function checkedRemoteVersion(){
-    checkCount++;
-    if(checkCount === pluginCount){
-        progress.end();
-        compareVersions();
-    }
-}
-
-function compareVersions(){
-    try{
-        var plugin;
-        for(var id in plugins){
-            plugin = plugins[id];
-            try{
-                if(!plugin.target || (!plugin.installed && target === "remote" )){
-                    plugin.status = "error";
-                }else if(plugin.installed ===  plugin.target || semver.eq(plugin.installed, plugin.target)){
-                    plugin.status = "equal";
-                }else if(semver.lt(plugin.installed, plugin.target)) {
-                    plugin.status = "newer-target";
-                }else if(semver.gt(plugin.installed, plugin.target)) {
-                    plugin.status = "newer-installed";
-                }else{
-                    plugin.status = "unknown-mismatch";
-                }
-            }catch(e){
-                plugin.status = "error";
-                plugin.error = "Error comparing versions: local version="+plugin.installed+"; target version="+plugin.target+"; version error="+ e.message;
-            }
-        }
-    displayResults();
-    }catch(e){
-        errorHandler.handleFatalException(e);
-    }
 }
 
 function displayResults(){
-    // Outdated local
-    var outdated = _.filter(plugins, function(plugin, id){
+    var pluginsForUpdate = [];
+
+    // newer target
+    var newerTarget = _.filter(plugins, function(plugin, id){
         plugin.id = id;
         return plugin.status === "newer-target";
     });
-    if(outdated.length > 0){
-        logger.log(getTitle("Plugin update available").green);
-        outdated.forEach(function(plugin){
+    if(newerTarget.length > 0){
+        var title = target === "config" ? "Config version newer than installed" : "Plugin update available";
+        logger.log(getTitle(title).green);
+        newerTarget.forEach(function(plugin){
             logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).green);
         });
+        pluginsForUpdate = pluginsForUpdate.concat(newerTarget);
+    }
+
+    // new target (config only)
+    var newTarget = _.filter(plugins, function(plugin, id){
+        plugin.id = id;
+        return plugin.status === "new-target";
+    });
+    if(newTarget.length > 0){
+        logger.log(getTitle("New plugins in config.xml (not installed locally)").green);
+        newTarget.forEach(function(plugin){
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).green);
+        });
+        pluginsForUpdate = pluginsForUpdate.concat(newTarget);
     }
 
 
-    // newer local/unknown mismatch
-    var newer = _.filter(plugins, function(plugin, id){
+    // newer installed
+    var newerInstalled = _.filter(plugins, function(plugin, id){
         plugin.id = id;
         return plugin.status === "newer-installed";
     });
-    if(newer.length > 0){
-        logger.log(getTitle("Installed plugin version newer than target default").yellow);
-        newer.forEach(function(plugin){
+    if(newerInstalled.length > 0){
+        var title = target === "config" ? "Config version older than installed" : "Installed plugin version newer than remote default";
+        logger.log(getTitle(title).yellow);
+        newerInstalled.forEach(function(plugin){
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).yellow);
+        });
+        if(target === "config" && cliArgs["allow-downdate"]){
+            pluginsForUpdate = pluginsForUpdate.concat(newerInstalled);
+        }
+    }
+
+    // new installed (config only)
+    var newInstalled = _.filter(plugins, function(plugin, id){
+        plugin.id = id;
+        return plugin.status === "new-installed";
+    });
+    if(newInstalled.length > 0){
+        logger.log(getTitle("Locally installed plugins not in config.xml").yellow);
+        newInstalled.forEach(function(plugin){
             logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).yellow);
         });
     }
@@ -417,8 +200,8 @@ function displayResults(){
         });
     }
 
-    if(outdated.length > 0){
-        update.doUpdate(plugins, outdated, {
+    if(pluginsForUpdate.length > 0){
+        update.doUpdate(plugins, pluginsForUpdate, {
             updateMode: updateMode,
             unconstrainVersions: unconstrainVersions,
             save: cliArgs["save"],
@@ -446,7 +229,9 @@ function getTitle(msg){
 }
 
 function getPluginSnippet(id, source, installedVersion, targetVersion, error){
-    if(source.type === "git"){
+    if(!source){
+        source = "N/A";
+    }else if(source.type === "git"){
         source = source.url;
     }else if(source.type === "registry"){
         source = "npm://"+source.id;
@@ -459,15 +244,23 @@ function getPluginSnippet(id, source, installedVersion, targetVersion, error){
     targetVersion = targetVersion ? targetVersion : "UNKNOWN";
 
     if(installedVersion === "UNKNOWN" && targetVersion !== "UNKNOWN"){
-        installedVersion += " - check plugins/fetch.json for orphaned entries";
+        if(target === "config"){
+            installedVersion = "N/A";
+        }else{
+            installedVersion += " - check plugins/fetch.json for orphaned entries";
+        }
     }else if(targetVersion === "UNKNOWN" && installedVersion !== "UNKNOWN"){
-        installedVersion += " - check target source is valid";
+        if(target === "config"){
+            targetVersion = "N/A";
+        }else{
+            targetVersion += " - check "+target+" source is valid";
+        }
     }
 
     var snippet =  "plugin: "+id+
             "\nsource: "+source+
             "\ninstalled version: "+installedVersion+
-            "\ntarget version: "+targetVersion;
+            "\n"+target+" version: "+targetVersion;
     if(error){
         snippet += "\nerror: "+error;
     }
