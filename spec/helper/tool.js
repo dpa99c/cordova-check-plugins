@@ -80,15 +80,15 @@ var toolHelper = (function(){
 
         var result = {
             section:{
-                newerTarget: getSection(target === 'config' ? "Config version newer than installed" : "Plugin update available"),
+                newerTarget: getSection(target === 'config' ? "config.xml version newer than installed" : "Plugin update available"),
                 upToDate: getSection("Up-to-date plugins"),
-                newerInstalled: getSection(target === 'config' ? "Config version older than installed" : "Installed plugin version newer than remote default"),
+                newerInstalled: getSection(target === 'config' ? "config.xml version older than installed" : "Installed plugin version newer than remote default"),
                 unknownVersion: getSection('Unknown plugin version mismatch'),
                 error: getSection('Error checking plugin version')
             }
         };
         if(target === 'config'){
-            result.section.newTarget = getSection("New plugins in config.xml (not installed locally)");
+            result.section.newTarget = getSection("New plugins in config.xml");
             result.section.newInstalled = getSection("Locally installed plugins not in config.xml");
         }
         return result;

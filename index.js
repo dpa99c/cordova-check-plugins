@@ -114,7 +114,7 @@ function displayResults(){
         return plugin.status === "newer-target";
     });
     if(newerTarget.length > 0){
-        var title = target === "config" ? "Config version newer than installed" : "Plugin update available";
+        var title = target === "config" ? "config.xml version newer than installed" : "Plugin update available";
         logger.log(getTitle(title).green);
         newerTarget.forEach(function(plugin){
             logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).green);
@@ -128,7 +128,7 @@ function displayResults(){
         return plugin.status === "new-target";
     });
     if(newTarget.length > 0){
-        logger.log(getTitle("New plugins in config.xml (not installed locally)").green);
+        logger.log(getTitle("New plugins in config.xml").green);
         newTarget.forEach(function(plugin){
             logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).green);
         });
@@ -142,7 +142,7 @@ function displayResults(){
         return plugin.status === "newer-installed";
     });
     if(newerInstalled.length > 0){
-        var title = target === "config" ? "Config version older than installed" : "Installed plugin version newer than remote default";
+        var title = target === "config" ? "config.xml version older than installed" : "Installed plugin version newer than remote default";
         logger.log(getTitle(title).yellow);
         newerInstalled.forEach(function(plugin){
             logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).yellow);
@@ -205,7 +205,9 @@ function displayResults(){
             updateMode: updateMode,
             unconstrainVersions: unconstrainVersions,
             save: cliArgs["save"],
-            forceUpdate: cliArgs["force-update"]
+            forceUpdate: cliArgs["force-update"] || cliArgs["force"],
+            target: target,
+            allowDowndate: cliArgs["allow-downdate"]
         });
     }
 }
@@ -303,7 +305,7 @@ function help(){
         log(tabIndent((tabIndent("interactive - using interactive CLI to choose which plugins to update manually"))));
         log(tabIndent((tabIndent("auto - automatically update any plugins for which an update is available"))));
         log(tabIndent("Or where pluginIds is the ID of a single specific plugin to update, or a space-separated list of multiple plugin IDs"));
-    displayOption("--force-update", "Forces the update of dependent plugins.");
+    displayOption("--force-update, --force", "Forces the update of dependent plugins.");
     displayOption("--unconstrain-versions", "Unconstrains checking of remote version so the highest remote version will be displayed regardless of locally specified version.");
     displayOption("--github-username", "Username to use for authenticated access to GitHub API. Specification of user credentials for GitHub increases API request limit to 5000 requests/hour.");
     displayOption("--github-password", "Password to use for authenticated access to GitHub API. Specification of user credentials for GitHub increases API request limit to 5000 requests/hour.");

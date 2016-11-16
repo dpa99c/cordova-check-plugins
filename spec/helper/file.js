@@ -163,6 +163,12 @@ var fileHelper = (function(){
         },
         writeConfigXml: function(fileContents){
             fs.writeFileSync(path.resolve('./config.xml'), fileContents, 'utf-8');
+        },
+        addPluginToConfigXml: function(name, spec){
+            var configXml = fileHelper.readConfigXml();
+            var tag = '<plugin name="'+name+'" spec="'+spec+'" />';
+            configXml = configXml.replace('</widget>', tag+'\n</widget>');
+            fileHelper.writeConfigXml(configXml);
         }
     };
     return fileHelper;
