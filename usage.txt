@@ -1,0 +1,36 @@
+Synopsis
+
+    cordova-check-plugins [options]
+
+Description
+
+    With no options specified, this displays the update status of installed plugins in a Cordova project with respect to their remote source.
+
+    By default, installed plugins are compared to the remote source from which they were installed to find if updates are available.
+    Specifying the --target=config option will compare installed plugin versions to those specified in the <plugin> elements of config.xml.
+
+    Specifying the --update option allows installed plugins for which updates are available to be updated.
+
+
+Options
+    -h, --help ...... Displays this help list.
+    -v, --version ...... Displays currently installed version of this module.
+    --verbose ...... Displays detailed log output.
+    --update={mode|pluginIds} ...... Specifies update mode for plugins which have updates available.
+    Valid modes are:
+        none - (default) don't update plugins
+        interactive - using interactive CLI to choose which plugins to update manually
+        auto - automatically update any plugins for which an update is available
+    Or where pluginIds is the ID of a single specific plugin to update, or a space-separated list of multiple plugin IDs
+    --force-update, --force ...... Forces the update of dependent plugins.
+    --unconstrain-versions ...... Unconstrains checking of remote version so the highest remote version will be displayed regardless of locally specified
+version.
+    --github-username ...... Username to use for authenticated access to GitHub API. Specification of user credentials for GitHub increases API request limit to 5000 requests/hour.
+    --github-password ...... Password to use for authenticated access to GitHub API. Specification of user credentials for GitHub increases API request limit to 5000 requests/hour.
+    --target ...... Sets the target to use for establishing if installed plugins are up-to-date.
+    Valid values are:
+        remote - (default) installed plugin versions will be compared to available versions in the remote source (e.g npm registry, git repo, local folder).
+        config - installed plugin versions will be to compared to the versions specified in <plugin> elements in the config.xml file.
+    --allow-downdate ...... If the installed plugin version is newer than the version specified in the config.xml, allow the plugin to be downgraded to the version specified in the config.xml. Only applies if --target=config is set.
+
+For more details see the Github page: http://github.com/dpa99c/cordova-check-plugins
