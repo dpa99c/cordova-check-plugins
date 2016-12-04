@@ -87,6 +87,12 @@ var fileHelper = (function(){
             opts = opts || {};
             var command  = 'cordova plugin add "'+pluginSource+'"';
             if(opts.save) command += ' --save';
+            if(opts.variables){
+                for(var name in opts.variables){
+                    var value = opts.variables[name];
+                    command += ' --variable '+name+'="'+value+'"';
+                }
+            }
 
             logger.log("Adding plugin: '"+command+"'");
             exec(command, function(err, stdout, stderr) {
