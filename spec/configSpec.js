@@ -150,7 +150,7 @@ describe("A spec for targeting config.xml", function() {
 
                      fileHelper.forceLocalPluginVersion('cordova-plugin-geolocation', '1.0.0'); // newer config
                      fileHelper.addPluginToConfigXml('cordova-plugin-device', '~100.0.0'); // invalid npm version
-                     fileHelper.addPluginToConfigXml('cordova.plugins.diagnostic', 'https://github.com/dpa99c/cordova-diagnostic-plugin#invalid_branch'); // invalid git branch
+                     fileHelper.addPluginToConfigXml('cordova.plugins.diagnostic', 'https://github.com/invalid_user/cordova-diagnostic-plugin'); // invalid git repo
                      
                      toolHelper.run('--target=config --update=auto', function(err, stdout, stderr, output){
                          expect(err).toBeFalsy();
