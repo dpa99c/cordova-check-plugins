@@ -1,9 +1,17 @@
+/**********
+ * Modules
+ **********/
+
+// Core
 var path = require('path');
 var fs = require('fs');
 
-var fileHelper = require(path.resolve('spec/helper/file.js'))();
-var toolHelper = require(path.resolve('spec/helper/tool.js'))();
-var logger = require(path.resolve('spec/helper/logger.js'))();
+// helper
+var fileHelper = require('./helper/file.js')();
+var toolHelper = require('./helper/tool.js')();
+
+//lib
+var logger = require('../lib/logger.js')();
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
@@ -14,14 +22,14 @@ toolHelper.setStaticArgs(
 describe("A spec for error handling", function() {
 
     beforeAll(function(done) {
-        fileHelper.reset(done);
+        fileHelper.reset(fileHelper.resetPlatforms.bind(this, done));
     });
 
     // Error handling
     it("should exit with a fatal error if run in a directory that doesn't appear to be a valid Cordova project with plugins", function(done){
         toolHelper.run(null, function(err, stdout, stderr, output){
             expect(err).toBeTruthy();
-            expect(stderr).toContain('FATAL ERROR: Failed to read plugins/fetch.json - ensure you\'re running this command from the root of a Cordova project');
+            expect(stdout).toContain('FATAL ERROR: Failed to read plugins/fetch.json - ensure you\'re running this command from the root of a Cordova project');
             done();
         });
     });

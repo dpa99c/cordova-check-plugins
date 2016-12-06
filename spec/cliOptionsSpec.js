@@ -1,9 +1,18 @@
+/**********
+ * Modules
+ **********/
+
+// Core
 var path = require('path');
 var fs = require('fs');
 
-var fileHelper = require(path.resolve('spec/helper/file.js'))();
-var toolHelper = require(path.resolve('spec/helper/tool.js'))();
-var logger = require(path.resolve('spec/helper/logger.js'))();
+// helper
+var fileHelper = require('./helper/file.js')();
+var toolHelper = require('./helper/tool.js')();
+
+//lib
+var logger = require('../lib/logger.js')();
+
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
@@ -14,7 +23,7 @@ toolHelper.setStaticArgs(
 describe("A spec for CLI options", function() {
 
     beforeAll(function(done) {
-        fileHelper.reset(done);
+        fileHelper.reset(fileHelper.resetPlatforms.bind(this, done));
     });
 
     it("should display online help when the '-h' CLI option is supplied", function(done) {
@@ -62,18 +71,18 @@ describe("A spec for CLI options", function() {
             fileHelper.forceLocalPluginVersion('cordova-custom-config', '1.0.0');
 
             toolHelper.run('--unconstrain-versions', function(err, stdout, stderr, output){
-                expect(output.section.updateAvailable['cordova-plugin-device']).toBeDefined();
-                expect(output.section.updateAvailable['cordova-plugin-camera']).toBeDefined();
-                expect(output.section.updateAvailable['cordova-plugin-geolocation']).toBeDefined();
+                expect(output.section.newerTarget['cordova-plugin-device']).toBeDefined();
+                expect(output.section.newerTarget['cordova-plugin-camera']).toBeDefined();
+                expect(output.section.newerTarget['cordova-plugin-geolocation']).toBeDefined();
 
-                var diagnosticPlugin = output.section.updateAvailable['cordova.plugins.diagnostic'];
+                var diagnosticPlugin = output.section.newerTarget['cordova.plugins.diagnostic'];
                 expect(diagnosticPlugin).toBeDefined();
+
                 expect(diagnosticPlugin['installed version'].match(diagnosticPlugin['remote version'].match(/^\d/))).toBeFalsy();
 
-                var configPlugin = output.section.updateAvailable['cordova-custom-config'];
+                var configPlugin = output.section.newerTarget['cordova-custom-config'];
                 expect(configPlugin).toBeDefined();
                 expect(configPlugin['installed version'].match(configPlugin['remote version'].match(/^\d/))).toBeFalsy();
-
                 done();
             });
 

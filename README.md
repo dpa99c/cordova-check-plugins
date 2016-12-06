@@ -1,32 +1,50 @@
 cordova-check-plugins [![Build Status](https://travis-ci.org/dpa99c/cordova-check-plugins.png?branch=master)](https://travis-ci.org/dpa99c/cordova-check-plugins) [![Latest Stable Version](https://img.shields.io/npm/v/cordova-check-plugins.svg)](https://www.npmjs.com/package/cordova-check-plugins) [![Total Downloads](https://img.shields.io/npm/dt/cordova-check-plugins.svg)](https://npm-stat.com/charts.html?package=cordova-check-plugins)
 =====================
 
-A CLI tool to check for updates / manage updating plugins in Cordova/Phonegap projects.
-
-# Purpose
-
-This tool intends to provide a convenient way to check if the plugins contained within a Cordova project are up-to-date with their remote source and to optionally update them, either automatically or interactively.
+A CLI tool to check for / manage plugin updates in Cordova/Phonegap projects.
 
 [![CLI screenshot](https://raw.githubusercontent.com/dpa99c/cordova-check-plugins/master/screenshot/1.thumb.jpg)](https://raw.githubusercontent.com/dpa99c/cordova-check-plugins/master/screenshot/1.jpg)
 
-# Supported plugin sources
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
 
-- Plugins installed via the npm registry (with optionally specified versions)
-- Plugins installed directly from GitHub repos (with optionally specified branches/tags)
-- Plugins installed from local sources (on the local machine)
+- [Purpose](#purpose)
+  - [Use cases](#use-cases)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Command-line options](#command-line-options)
+    - [-h or --help](#-h-or---help)
+    - [-v or --version](#-v-or---version)
+    - [--verbose](#--verbose)
+    - [--update={mode|pluginIds}](#--updatemodepluginids)
+    - [--unconstrain-versions](#--unconstrain-versions)
+    - [--force, --force-update](#--force---force-update)
+    - [--save](#--save)
+    - [--github-username and --github-password](#--github-username-and---github-password)
+    - [--target](#--target)
+    - [--allow-downdate](#--allow-downdate)
+    - [--remove-all](#--remove-all)
+- [Supported plugin sources](#supported-plugin-sources)
+- [License](#license)
 
-For example:
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-    cordova-plugin-camera
-    cordova-plugin-geolocation@*
-    cordova-plugin-whitelist@1
-    cordova-plugin-file@4.0.0
-    cordova-plugin-inappbrowser@~1.1.1
-    cordova-plugin-device@^1.0.0
-    https://github.com/dpa99c/cordova-custom-config
-    https://github.com/apache/cordova-plugin-battery-status#r1.0.0
-    git://github.com/apache/cordova-plugin-battery-status.git#r1.0.0
-    /some/local/path/to/a/plugin
+# Purpose
+
+This tool intends to provide a convenient way to check if the plugins contained within a Cordova project are up-to-date and to optionally update them.
+
+It has arisen from my own necessity when managing complex Cordova projects containing many plugins.
+
+## Use cases
+
+This tool is useful for:
+
+- Checking if updates are available for plugins installed in a project.
+- Updating outdated plugins, either automatically or interactively.
+- Keeping installed plugin versions in sync with those specified in config.xml
+- Quickly removing all installed plugins in a project.
+
 
 # Installation
 
@@ -115,21 +133,24 @@ It will have no effect on plugins installed directly from github repos.
 This is because it's not possible to distinguish if github URLs contain a branch or a tag reference. Both are specified using `#`.
 So it's not possible to distinguish a tag URL (e.g. `http://github.com/some/repo#r1.2.3`) from a branch URL (e.g. `http://github.com/some/repo#some_branch`).
 
-### --force-update
+### --force, --force-update
 
-Forces the update of dependent plugins.
-By default, Cordova/Phonegap will not allow the removal of plugins on which other plugins are dependent, and therefore will not allow them to be updated.
+Forces the update of dependent plugins when updating plugins.
+By default, Cordova/Phonegap will not allow the removal of plugins on which other plugins are dependent, and therefore will not allow them to be updated/removed.
 For example, `cordova-plugin-file-transfer` depends on `cordova-plugin-file`.
 By setting this option, both plugins will be updated (if updates are available).
 Without it, only the "parent" plugin - in this case `cordova-plugin-file-transfer` - will be updated.
 
-    $ cordova-check-plugins --update=auto --force-update
+    $ cordova-check-plugins --update=auto --force
 
 ### --save
 
-Save changes to the config.xml
+Save changes to the config.xml when updating/removing plugins.
+The new version number of the updated plugin will be saved in a `<plugin>` tag.
+This is the same as doing `cordova plugin add cordova-plugin-foo --save` when adding a plugin manually.
 
     $ cordova-check-plugins --update=auto --force-update --save
+    $ cordova-check-plugins --remove-all --save
 
 ### --github-username and --github-password
 
@@ -139,6 +160,54 @@ When checking remote versions for that are hosted on GitHub, by default unauthen
 This is [rate limited](https://developer.github.com/v3/#rate-limiting) to 60 requests/hour.
 For most users, this should be sufficient, but if this module is used in a Continuous Integration environment with a project using multiple GitHub-hosted plugins, that rate can be exceeded.
 By specifying valid GitHub user credentials, these will be used when communicating with the GitHub API, which increases the number of allowed requests to 5000 requests/hour.
+
+    $ cordova-check-plugins --github-username=myUsername --github-password=myPassword
+
+### --target
+
+Sets the target to use for establishing if installed plugins are up-to-date.
+
+Valid values are:
+
+- `remote` - (default) installed plugin versions will be compared to available versions in the remote source (e.g npm registry, git repo, local folder).
+- `config` - installed plugin versions will be to compared to the versions specified in `<plugin>` elements in the config.xml file.
+
+
+    $ cordova-check-plugins --target=config
+
+Setting `--target=config` is useful if you want to keep locally installed plugins in sync with the versions specified in the config.xml, rather than the newest remote versions.
+
+### --allow-downdate
+
+If the installed plugin version is newer than the version specified in the config.xml, allow the plugin to be downgraded to the version specified in the config.xml. Only applies if `--target=config`.
+
+    $ cordova-check-plugins --target=config --allow-downdate
+
+### --remove-all
+
+    $ cordova-check-plugins --remove-all
+
+Removes all installed plugins from the project. If `--save` is also specified, entries will also be removed from config.xml.
+This option is exclusive and the default behaviour of checking for plugin updates will be skipped, as will any updates if `--update` is specified.
+
+# Supported plugin sources
+
+- Plugins installed via the npm registry (with optionally specified versions)
+- Plugins installed directly from GitHub repos (with optionally specified branches/tags)
+- Plugins installed from local sources (on the local machine)
+
+For example:
+
+    cordova-plugin-camera
+    cordova-plugin-geolocation@*
+    cordova-plugin-whitelist@1
+    cordova-plugin-file@4.0.0
+    cordova-plugin-inappbrowser@~1.1.1
+    cordova-plugin-device@^1.0.0
+    https://github.com/dpa99c/cordova-custom-config
+    https://github.com/apache/cordova-plugin-battery-status#r1.0.0
+    git://github.com/apache/cordova-plugin-battery-status.git#r1.0.0
+    /some/local/path/to/a/plugin
 
 License
 ================
