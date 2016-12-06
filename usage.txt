@@ -22,7 +22,7 @@ Options
         interactive - using interactive CLI to choose which plugins to update manually
         auto - automatically update any plugins for which an update is available
     Or where pluginIds is the ID of a single specific plugin to update, or a space-separated list of multiple plugin IDs
-    --force-update, --force ...... Forces the update of dependent plugins.
+    --force, --force-update ...... Forces the update of dependent plugins when updating plugins
     --unconstrain-versions ...... Unconstrains checking of remote version so the highest remote version will be displayed regardless of locally specified
 version.
     --github-username ...... Username to use for authenticated access to GitHub API. Specification of user credentials for GitHub increases API request limit to 5000 requests/hour.
@@ -32,5 +32,6 @@ version.
         remote - (default) installed plugin versions will be compared to available versions in the remote source (e.g npm registry, git repo, local folder).
         config - installed plugin versions will be to compared to the versions specified in <plugin> elements in the config.xml file.
     --allow-downdate ...... If the installed plugin version is newer than the version specified in the config.xml, allow the plugin to be downgraded to the version specified in the config.xml. Only applies if --target=config is set.
+    --remove-all ...... Removes all installed plugins from the project. If --save is also specified, entries will also be removed from config.xml.
 
 For more details see the Github page: http://github.com/dpa99c/cordova-check-plugins

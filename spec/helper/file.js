@@ -11,6 +11,7 @@ var fileHelper = (function(){
 
     // lib
     var logger = require('../../lib/logger.js')();
+    var local = require('../../lib/local.js')();
 
     // 3rd party
     try{
@@ -81,6 +82,22 @@ var fileHelper = (function(){
                 logger.log("Reset complete");
                 onFinish();
             });
+        },
+        resetPlatforms: function(onFinish){
+            var platforms = local.getPlatforms();
+            
+            var _resetPlatforms; _resetPlatforms = function(){
+                if(platforms.length === 0){
+                    logger.log("Platforms reset");
+                    return onFinish();
+                }
+                var platform = platforms.pop();
+                exec("cordova platform rm "+platform+" && cordova platform add "+platform, function(err, stdout, stderr) {
+                    logger.log("Platform reset: "+platform);
+                    _resetPlatforms();
+                });
+            };
+            _resetPlatforms();
         },
 
         addPlugin: function(pluginSource, onFinish, opts){

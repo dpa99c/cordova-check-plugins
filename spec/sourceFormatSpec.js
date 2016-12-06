@@ -25,7 +25,7 @@ describe("A spec for plugin source format", function() {
     var err, stdout, stderr, output;
 
     beforeAll(function(done) {
-        fileHelper.reset(function(){
+        fileHelper.reset(fileHelper.resetPlatforms.bind(this, function(){
             fileHelper.addPlugins([
                 'cordova-plugin-camera',
                 'cordova-plugin-geolocation@*',
@@ -51,7 +51,7 @@ describe("A spec for plugin source format", function() {
                     done();
                 });
             });
-        });
+        }));
     });
 
 

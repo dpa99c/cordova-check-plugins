@@ -22,7 +22,7 @@ toolHelper.setStaticArgs(
 describe("A spec for error handling", function() {
 
     beforeAll(function(done) {
-        fileHelper.reset(done);
+        fileHelper.reset(fileHelper.resetPlatforms.bind(this, done));
     });
 
     // Error handling

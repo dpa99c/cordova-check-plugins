@@ -24,6 +24,10 @@ toolHelper.setStaticArgs(
 
 describe("A spec for targeting config.xml", function() {
 
+    beforeAll(function(done) {
+        fileHelper.resetPlatforms(done);
+    });
+
     beforeEach(function(done) {
         fileHelper.reset(done);
     });

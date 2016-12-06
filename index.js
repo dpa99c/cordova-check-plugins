@@ -16,6 +16,7 @@ var progress = require('./lib/progress.js')();
 var cliArgs = require('./lib/cliArgs.js')().args;
 var config = require('./lib/config.js')();
 var remote = require('./lib/remote.js')();
+var local = require('./lib/local.js')();
 
 // 3rd party
 try{
@@ -31,12 +32,6 @@ try{
     errorHandler.handleFatalException(e, "Failed to acquire module dependencies");
 }
 
-
-/***********
- * Constants
- ***********/
-var PLUGINS_DIR = './plugins/';
-var FETCH_FILE = PLUGINS_DIR + 'fetch.json';
 
 
 /******************
@@ -58,7 +53,7 @@ function readJson(){
 
     logger.verbose("Finding installed plugins");
     progress.start("Checking local versions");
-    jsonfile.readFile(FETCH_FILE, function(err, json){
+    local.readFetchJson(function(err, json){
         try{
             if(err){
                 errorHandler.handleFatalError( "Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project.\n\n"+err);
@@ -81,7 +76,7 @@ function readJson(){
 
 function getInstalledVersions(){
     logger.verbose("Reading installed plugin versions");
-    var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(PLUGINS_DIR);
+    var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(local.PLUGINS_DIR);
 
     installedPlugins.forEach(function(plugin){
         if(plugins[plugin.id]){
@@ -91,7 +86,12 @@ function getInstalledVersions(){
             logger.error(msg);
         }
     });
-    getTargetVersions();
+
+    if(cliArgs["remove-all"]){
+        update.removeAll(installedPlugins, true, cliArgs["save"]);
+    }else{
+        getTargetVersions();
+    }
 }
 
 
@@ -205,7 +205,7 @@ function displayResults(){
             updateMode: updateMode,
             unconstrainVersions: unconstrainVersions,
             save: cliArgs["save"],
-            forceUpdate: cliArgs["force-update"] || cliArgs["force"],
+            force: cliArgs["force"] || cliArgs["force-update"],
             target: target,
             allowDowndate: cliArgs["allow-downdate"]
         });

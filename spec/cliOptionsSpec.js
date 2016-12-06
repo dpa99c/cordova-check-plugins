@@ -23,7 +23,7 @@ toolHelper.setStaticArgs(
 describe("A spec for CLI options", function() {
 
     beforeAll(function(done) {
-        fileHelper.reset(done);
+        fileHelper.reset(fileHelper.resetPlatforms.bind(this, done));
     });
 
     it("should display online help when the '-h' CLI option is supplied", function(done) {

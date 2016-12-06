@@ -26,7 +26,7 @@ describe("A spec for reporting", function() {
 
     beforeAll(function(done) {
 
-        fileHelper.reset(function(){
+        fileHelper.reset(fileHelper.resetPlatforms.bind(this, function(){
             fileHelper.addPlugins([
                 'cordova-plugin-camera@latest', //up-to-date
                 'cordova-plugin-geolocation@1', //update available
@@ -50,7 +50,7 @@ describe("A spec for reporting", function() {
                 });
 
             });
-        });
+        }));
     });
 
     it("should report successfully", function() {

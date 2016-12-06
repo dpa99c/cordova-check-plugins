@@ -20,6 +20,10 @@ toolHelper.setStaticArgs(
 
 describe("A spec for updating plugins", function() {
 
+    beforeAll(function(done) {
+        fileHelper.resetPlatforms(done);
+    });
+
     beforeEach(function(done) {
         fileHelper.reset(done);
     });
@@ -35,7 +39,7 @@ describe("A spec for updating plugins", function() {
         });
     });
 
-    it("should NOT force the update of dependent plugins when the '--force-update' CLI option is NOT supplied", function(done) {
+    it("should NOT force the update of dependent plugins when the '--force' CLI option is NOT supplied", function(done) {
         fileHelper.addPlugin('cordova-plugin-file-transfer', function(err, stdout, stderr){
             fileHelper.forceLocalPluginVersion('cordova-plugin-file', '1.0.0');
 
@@ -48,11 +52,11 @@ describe("A spec for updating plugins", function() {
         });
     });
 
-    it("should force the update of dependent plugins when the '--force-update' CLI option is supplied", function(done) {
+    it("should force the update of dependent plugins when the '--force' CLI option is supplied", function(done) {
         fileHelper.addPlugin('cordova-plugin-file-transfer', function(err, stdout, stderr){
             fileHelper.forceLocalPluginVersion('cordova-plugin-file', '1.0.0');
 
-            toolHelper.run('--force-update --update=cordova-plugin-file', function(err, stdout, stderr, output){
+            toolHelper.run('--force --update=cordova-plugin-file', function(err, stdout, stderr, output){
                 expect(err).toBeFalsy();
                 expect(stdout).toContain("Updated 'cordova-plugin-file'");
                 expect(stdout).toContain("Successfully updated all specified plugins");
