@@ -1,5 +1,6 @@
 /.idea
 /node_modules
 /plugins
+/platforms
 /www
 /config.xml
