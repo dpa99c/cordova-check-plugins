@@ -108,33 +108,17 @@ function getTargetVersions(){
 function displayResults(){
     var pluginsForUpdate = [];
 
-    // newer target
-    var newerTarget = _.filter(plugins, function(plugin, id){
+    // Up-to-date (verbose)
+    var equal = _.filter(plugins, function(plugin, id){
         plugin.id = id;
-        return plugin.status === "newer-target";
+        return plugin.status === "equal";
     });
-    if(newerTarget.length > 0){
-        var title = target === "config" ? "config.xml version newer than installed" : "Plugin update available";
-        logger.log(getTitle(title).green);
-        newerTarget.forEach(function(plugin){
-            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).green);
+    if(equal.length > 0){
+        logger.log(getTitle("Up-to-date plugins").grey);
+        equal.forEach(function(plugin){
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).grey);
         });
-        pluginsForUpdate = pluginsForUpdate.concat(newerTarget);
     }
-
-    // new target (config only)
-    var newTarget = _.filter(plugins, function(plugin, id){
-        plugin.id = id;
-        return plugin.status === "new-target";
-    });
-    if(newTarget.length > 0){
-        logger.log(getTitle("New plugins in config.xml").green);
-        newTarget.forEach(function(plugin){
-            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).green);
-        });
-        pluginsForUpdate = pluginsForUpdate.concat(newTarget);
-    }
-
 
     // newer installed
     var newerInstalled = _.filter(plugins, function(plugin, id){
@@ -188,16 +172,31 @@ function displayResults(){
         });
     }
 
-    // Up-to-date (verbose)
-    var equal = _.filter(plugins, function(plugin, id){
+    // newer target
+    var newerTarget = _.filter(plugins, function(plugin, id){
         plugin.id = id;
-        return plugin.status === "equal";
+        return plugin.status === "newer-target";
     });
-    if(equal.length > 0){
-        logger.log(getTitle("Up-to-date plugins").grey);
-        equal.forEach(function(plugin){
-            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).grey);
+    if(newerTarget.length > 0){
+        var title = target === "config" ? "config.xml version newer than installed" : "Plugin update available";
+        logger.log(getTitle(title).green);
+        newerTarget.forEach(function(plugin){
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).green);
         });
+        pluginsForUpdate = pluginsForUpdate.concat(newerTarget);
+    }
+
+    // new target (config only)
+    var newTarget = _.filter(plugins, function(plugin, id){
+        plugin.id = id;
+        return plugin.status === "new-target";
+    });
+    if(newTarget.length > 0){
+        logger.log(getTitle("New plugins in config.xml").green);
+        newTarget.forEach(function(plugin){
+            logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).green);
+        });
+        pluginsForUpdate = pluginsForUpdate.concat(newTarget);
     }
 
     if(pluginsForUpdate.length > 0){
