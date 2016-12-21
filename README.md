@@ -216,7 +216,13 @@ Using [cordova-plugin-config-command](https://github.com/dpa99c/cordova-plugin-c
 
 For example, to automatically update installed plugins to match versions specified in the `config.xml`:
 
-    <command name="cordova-check-plugins" args="--target=config --update=auto --allow-downdate" hook="before_prepare" display_output="true" abort_on_error="true"/>
+    <command
+        name="cordova-check-plugins"
+        args="--target=config --update=auto --allow-downdate"
+        hook="before_prepare"
+        display_output="true"
+        abort_on_error="true"
+    />
 
 License
 ================
