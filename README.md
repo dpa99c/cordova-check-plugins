@@ -26,6 +26,7 @@ A CLI tool to check for / manage plugin updates in Cordova/Phonegap projects.
     - [--allow-downdate](#--allow-downdate)
     - [--remove-all](#--remove-all)
 - [Supported plugin sources](#supported-plugin-sources)
+- [Integration with Cordova CLI](#integration-with-cordova-cli)
 - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -208,6 +209,14 @@ For example:
     https://github.com/apache/cordova-plugin-battery-status#r1.0.0
     git://github.com/apache/cordova-plugin-battery-status.git#r1.0.0
     /some/local/path/to/a/plugin
+
+# Integration with Cordova CLI
+
+Using [cordova-plugin-config-command](https://github.com/dpa99c/cordova-plugin-config-command), this tool can be triggered during the Cordova CLI build cycle by inserting a `<command>` into the `config.xml`.
+
+For example, to automatically update installed plugins to match versions specified in the `config.xml`:
+
+    <command name="cordova-check-plugins" args="--target=config --update=auto --allow-downdate" hook="before_prepare" display_output="true" abort_on_error="true"/>
 
 License
 ================
