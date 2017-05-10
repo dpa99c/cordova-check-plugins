@@ -127,12 +127,12 @@ Unconstrains checking of remote version so the highest remote version will be di
 By default, if the version was specified when the plugin was installed, the specified version number will be used to constrain which remote versions are returned.
 
 For example, let's say `cordova-plugin-foo` has remote versions `1.0.1`, `1.0.2`, `1.1.0`, `2.0.0`:
-- If `cordova plugin install cordova-plugin-foo` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `2.0.0`
-- If `cordova plugin install cordova-plugin-foo@1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.1.0`
-- If `cordova plugin install cordova-plugin-foo@1.0` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.2`
-- If `cordova plugin install cordova-plugin-foo@1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.1`
-- If `cordova plugin install cordova-plugin-foo@~1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.2`
-- If `cordova plugin install cordova-plugin-foo@^1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.1.0`
+- If `cordova plugin add cordova-plugin-foo` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `2.0.0`
+- If `cordova plugin add cordova-plugin-foo@1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.1.0`
+- If `cordova plugin add cordova-plugin-foo@1.0` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.2`
+- If `cordova plugin add cordova-plugin-foo@1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.1`
+- If `cordova plugin add cordova-plugin-foo@~1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.0.2`
+- If `cordova plugin add cordova-plugin-foo@^1.0.1` was used to install the plugin, then `cordova-check-plugins` will return the highest remote version as `1.1.0`
 
 Calling `cordova-check-plugins --unconstrain-versions` will ignore the specified version, so in the example above, all cases would return `2.0.0`.
 
