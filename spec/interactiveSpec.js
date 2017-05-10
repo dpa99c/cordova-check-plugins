@@ -23,7 +23,7 @@ describe("A spec for interactive updating of outdated plugins", function() {
         fileHelper.addPlugins([
             //'cordova.plugins.diagnostic',
             //'cordova-plugin-device',
-            'cordova-custom-config'
+            'cordova-plugin-device-orientation'
 
         ], function(results){
             toolHelper.setStaticArgs('--verbose');

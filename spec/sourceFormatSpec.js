@@ -32,7 +32,7 @@ describe("A spec for plugin source format", function() {
                 'uk.co.workingedge.phonegap.plugin.launchnavigator@2',
                 'cordova-plugin-file@4.0.0',
                 'cordova.plugins.diagnostic@~2.0.0',
-                'cordova-custom-config@^1.0.0',
+                'cordova-plugin-device-orientation@^1.0.0',
                 'https://github.com/apache/cordova-plugin-network-information',
                 'https://github.com/apache/cordova-plugin-battery-status#r1.0.0',
                 'git://github.com/apache/cordova-plugin-statusbar.git#r1.0.1',
@@ -41,7 +41,7 @@ describe("A spec for plugin source format", function() {
             ], function(results){
                 fileHelper.forceLocalPluginVersion('uk.co.workingedge.phonegap.plugin.launchnavigator', '2.6.0');
                 fileHelper.forceLocalPluginVersion('cordova.plugins.diagnostic', '2.0.0');
-                fileHelper.forceLocalPluginVersion('cordova-custom-config', '1.0.0');
+                fileHelper.forceLocalPluginVersion('cordova-plugin-device-orientation', '1.0.0');
 
                 toolHelper.run(null, function(_err, _stdout, _stderr, _parsed_stdout){
                     err = _err;
@@ -78,8 +78,8 @@ describe("A spec for plugin source format", function() {
         expect(plugin['installed version'].match(plugin['remote version'].match(/^\d\.\d/))).toBeTruthy();
         expect(plugin['installed version'].match(plugin['remote version'].match(/^\d\.\d\.\d/))).toBeFalsy();
     });
-    it("should handle plugin sources in the format 'cordova-custom-config@^1.0.0'", function() {
-        var plugin = output.section.newerTarget['cordova-custom-config'];
+    it("should handle plugin sources in the format 'cordova-plugin-device-orientation@^1.0.0'", function() {
+        var plugin = output.section.newerTarget['cordova-plugin-device-orientation'];
         expect(plugin).toBeDefined();
         expect(plugin['installed version'].match(plugin['remote version'].match(/^\d/))).toBeTruthy();
         expect(plugin['installed version'].match(plugin['remote version'].match(/^\d\.\d/))).toBeFalsy();

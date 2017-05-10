@@ -65,10 +65,10 @@ describe("A spec for CLI options", function() {
             'cordova-plugin-camera@1.0',
             'cordova-plugin-geolocation@1',
             'cordova.plugins.diagnostic@~2.0.0',
-            'cordova-custom-config@^1.0.0'
+            'cordova-plugin-device-orientation@^1.0.0'
         ], function(results){
             fileHelper.forceLocalPluginVersion('cordova.plugins.diagnostic', '2.0.0');
-            fileHelper.forceLocalPluginVersion('cordova-custom-config', '1.0.0');
+            fileHelper.forceLocalPluginVersion('cordova-plugin-device-orientation', '1.0.0');
 
             toolHelper.run('--unconstrain-versions', function(err, stdout, stderr, output){
                 expect(output.section.newerTarget['cordova-plugin-device']).toBeDefined();
@@ -80,7 +80,7 @@ describe("A spec for CLI options", function() {
 
                 expect(diagnosticPlugin['installed version'].match(diagnosticPlugin['remote version'].match(/^\d/))).toBeFalsy();
 
-                var configPlugin = output.section.newerTarget['cordova-custom-config'];
+                var configPlugin = output.section.newerTarget['cordova-plugin-device-orientation'];
                 expect(configPlugin).toBeDefined();
                 expect(configPlugin['installed version'].match(configPlugin['remote version'].match(/^\d/))).toBeFalsy();
                 done();

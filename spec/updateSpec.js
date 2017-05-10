@@ -143,17 +143,17 @@ describe("A spec for updating plugins", function() {
         fileHelper.addPlugins([
             'cordova.plugins.diagnostic',
             'cordova-plugin-device',
-            'cordova-custom-config'
+            'cordova-plugin-device-orientation'
 
         ], function(results){
             fileHelper.forceLocalPluginVersion('cordova.plugins.diagnostic', '2.0.0');
             fileHelper.forceLocalPluginVersion('cordova-plugin-device', '1.0.0');
-            fileHelper.forceLocalPluginVersion('cordova-custom-config', '1.0.0');
+            fileHelper.forceLocalPluginVersion('cordova-plugin-device-orientation', '1.0.0');
 
             toolHelper.run('--update="cordova.plugins.diagnostic cordova-plugin-device"', function(err, stdout, stderr, output){
                 expect(output.section.newerTarget['cordova.plugins.diagnostic']).toBeDefined();
                 expect(output.section.newerTarget['cordova-plugin-device']).toBeDefined();
-                expect(output.section.newerTarget['cordova-custom-config']).toBeDefined();
+                expect(output.section.newerTarget['cordova-plugin-device-orientation']).toBeDefined();
 
                 fileHelper.listPlugins(function(plugins){
                     expect(plugins['cordova.plugins.diagnostic'].version === '2.0.0').toBeFalsy();
@@ -162,7 +162,7 @@ describe("A spec for updating plugins", function() {
                     expect(plugins['cordova-plugin-device'].version === '1.0.0').toBeFalsy();
                     expect(stdout).toContain("Updated 'cordova-plugin-device' from 1.0.0 to "+plugins['cordova-plugin-device'].version);
 
-                    expect(plugins['cordova-custom-config'].version === '1.0.0').toBeTruthy();
+                    expect(plugins['cordova-plugin-device-orientation'].version === '1.0.0').toBeTruthy();
                     done();
                 });
             });
