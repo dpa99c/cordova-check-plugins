@@ -11,14 +11,20 @@ var fileHelper = require('./helper/file.js')();
 var toolHelper = require('./helper/tool.js')();
 
 //lib
+var credentialsToObfuscate = [
+    process.env.GITHUB_PASSWORD,
+    process.env.GITHUB_ACCESS_TOKEN
+];
 var logger = require('../lib/logger.js')();
+logger.setCredentialsToObfuscate(credentialsToObfuscate);
 
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
 toolHelper.setStaticArgs(
     ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
-    ' --github-password="'+process.env.GITHUB_PASSWORD+'"');
+    ' --github-password="'+process.env.GITHUB_PASSWORD+'"'+
+    ' --obfuscate-credentials="'+credentialsToObfuscate.join(' ')+'"');
 
 describe("A spec for CLI options", function() {
 
@@ -82,7 +88,7 @@ describe("A spec for CLI options", function() {
 
                 var configPlugin = output.section.newerTarget['cordova-plugin-device-orientation'];
                 expect(configPlugin).toBeDefined();
-                expect(configPlugin['installed version'].match(configPlugin['remote version'].match(/^\d/))).toBeFalsy();
+                expect(configPlugin['installed version'].match(configPlugin['remote version'].match(/^\d\.\d\.\d/))).toBeFalsy();
                 done();
             });
 
@@ -97,7 +103,7 @@ describe("A spec for CLI options", function() {
                 function(err, stdout, stderr, output){
                     expect(err).toBeFalsy();
                     expect(stderr).toBeFalsy();
-                    expect(stdout).toContain('Using specified GitHub credentials to authenticate access to the GitHub API');
+                    expect(stdout).toContain('Using configured GitHub credentials to authenticate access to the GitHub API');
                     done();
                 }
             );

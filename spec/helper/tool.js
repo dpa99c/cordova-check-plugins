@@ -33,15 +33,12 @@ var toolHelper = (function(){
         staticArgs = args;
     };
 
-    toolHelper.obfuscateCliArgs = function(command){
-        return command.replace(/github-password=[^ ]+/,'github-password={obfuscated}');
-    };
 
     toolHelper.run = function(args, onFinish){
         args = args || '';
         var target = args.match('target=config') ? 'config' : 'remote';
         var command = "node index.js " + args + ' ' + staticArgs;
-        logger.log("Running tool: "+toolHelper.obfuscateCliArgs(command));
+        logger.log("Running tool: "+command);
         exec(command, function(err, stdout, stderr) {
             if(err){
                 return onFinish(-1, stdout, stderr);

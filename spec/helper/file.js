@@ -102,8 +102,12 @@ var fileHelper = (function(){
 
         addPlugin: function(pluginSource, onFinish, opts){
             opts = opts || {};
-            var command  = 'cordova plugin add "'+pluginSource+'"';
-            if(opts.save) command += ' --save';
+            var command  = 'cordova plugin add "'+pluginSource+'" --nofetch';
+            if(opts.save){
+                command += ' --save';
+            }else{
+                command += ' --nosave';
+            }
             if(opts.variables){
                 for(var name in opts.variables){
                     var value = opts.variables[name];
@@ -135,7 +139,11 @@ var fileHelper = (function(){
         removePlugin: function(pluginId, onFinish, opts){
             opts = opts || {};
             var command  = 'cordova plugin rm "'+pluginId+'"';
-            if(opts.save) command += ' --save';
+            if(opts.save){
+                command += ' --save';
+            }else{
+                command += ' --nosave';
+            }
 
             logger.log("Removing plugin: '"+command+"'");
             exec(command, function(err, stdout, stderr) {

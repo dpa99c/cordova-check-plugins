@@ -290,6 +290,10 @@ function run(){
             return help();
         }
 
+        if(cliArgs["obfuscate-credentials"]){
+            logger.setCredentialsToObfuscate(cliArgs["obfuscate-credentials"].split(' '));
+        }
+
         if(cliArgs["verbose"]){
             verbose = true;
             logger.verbose("Verbose output enabled");

@@ -5,8 +5,7 @@ sudo: false
 notifications:
   email: false
 before_install:
-- if [[ `npm -v` != 3* ]]; then npm i -g npm@3; fi
-- npm install -g cordova
+- npm install -g cordova@7.0.1
 before_script:
 - cordova create tmp
 - mv tmp/* .

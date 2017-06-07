@@ -25,6 +25,7 @@ A CLI tool to check for / manage plugin updates in Cordova/Phonegap projects.
     - [--target](#--target)
     - [--allow-downdate](#--allow-downdate)
     - [--remove-all](#--remove-all)
+    - [--obfuscate-credentials](#--obfuscate-credentials)
 - [Supported plugin sources](#supported-plugin-sources)
 - [Integration with Cordova CLI](#integration-with-cordova-cli)
 - [License](#license)
@@ -198,6 +199,14 @@ If the installed plugin version is newer than the version specified in the confi
 Removes all installed plugins from the project. If `--save` is also specified, entries will also be removed from config.xml.
 This option is exclusive and the default behaviour of checking for plugin updates will be skipped, as will any updates if `--update` is specified.
 
+### --obfuscate-credentials
+
+    $ cordova-check-plugins --obfuscate-credentials="my_password my_access_token"
+
+A space-separated list of credentials to obfuscate when logging output to the console. 
+This is useful if your plugin source URLs contain sensitive credentials such as passwords or access tokens that you don't want to appear in console output from the tool. 
+Any credentials specified here will be replaced with {obfuscated} in the console output.
+
 # Supported plugin sources
 
 - Plugins installed via the npm registry (with optionally specified versions)
@@ -212,9 +221,11 @@ For example:
     cordova-plugin-file@4.0.0
     cordova-plugin-inappbrowser@~1.1.1
     cordova-plugin-device@^1.0.0
-    https://github.com/dpa99c/cordova-custom-config
+    https://github.com/apache/cordova-plugin-battery-status
     https://github.com/apache/cordova-plugin-battery-status#r1.0.0
     git://github.com/apache/cordova-plugin-battery-status.git#r1.0.0
+    https://username:password@github.com/apache/cordova-plugin-battery-status
+    https://access_token:@github.com/apache/cordova-plugin-battery-status
     /some/local/path/to/a/plugin
 
 # Integration with Cordova CLI

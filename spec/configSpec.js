@@ -11,7 +11,12 @@ var fileHelper = require('./helper/file.js')();
 var toolHelper = require('./helper/tool.js')();
 
 //lib
+var credentialsToObfuscate = [
+    process.env.GITHUB_PASSWORD,
+    process.env.GITHUB_ACCESS_TOKEN
+];
 var logger = require('../lib/logger.js')();
+logger.setCredentialsToObfuscate(credentialsToObfuscate);
 
 // 3rd party
 var semver = require('semver');
@@ -20,7 +25,8 @@ jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
 toolHelper.setStaticArgs(
     ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
-    ' --github-password="'+process.env.GITHUB_PASSWORD+'"');
+    ' --github-password="'+process.env.GITHUB_PASSWORD+'"'+
+    ' --obfuscate-credentials="'+credentialsToObfuscate.join(' ')+'"');
 
 describe("A spec for targeting config.xml", function() {
 
@@ -123,7 +129,6 @@ describe("A spec for targeting config.xml", function() {
 
     describe("when updating plugins from config.xml", function() {
 
-    
         it("should log an error and continue if a plugin ID specified in the config.xml does not exist remotely", function(done){
             fileHelper.addPlugin(
                 'cordova-plugin-geolocation@1.0.0',

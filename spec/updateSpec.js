@@ -11,12 +11,19 @@ var fileHelper = require('./helper/file.js')();
 var toolHelper = require('./helper/tool.js')();
 
 //lib
+var credentialsToObfuscate = [
+    process.env.GITHUB_PASSWORD,
+    process.env.GITHUB_ACCESS_TOKEN
+];
 var logger = require('../lib/logger.js')();
+logger.setCredentialsToObfuscate(credentialsToObfuscate);
+
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
 toolHelper.setStaticArgs(
     ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
-    ' --github-password="'+process.env.GITHUB_PASSWORD+'"');
+    ' --github-password="'+process.env.GITHUB_PASSWORD+'"'+
+    ' --obfuscate-credentials="'+credentialsToObfuscate.join(' ')+'"');
 
 describe("A spec for updating plugins", function() {
 
@@ -34,6 +41,17 @@ describe("A spec for updating plugins", function() {
             expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeFalsy();
             toolHelper.run('--update=cordova-plugin-file --save', function(err, stdout, stderr, output){
                 expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeTruthy();
+                done();
+            });
+        });
+    });
+
+    it("should NOT save update changes to the config.xml when the '--save' CLI option is NOT supplied", function(done) {
+        fileHelper.addPlugin('cordova-plugin-file', function(err, stdout, stderr){
+            fileHelper.forceLocalPluginVersion('cordova-plugin-file', '1.0.0');
+            expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeFalsy();
+            toolHelper.run('--update=cordova-plugin-file', function(err, stdout, stderr, output){
+                expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeFalsy();
                 done();
             });
         });

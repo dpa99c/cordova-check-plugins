@@ -11,12 +11,19 @@ var fileHelper = require('./helper/file.js')();
 var toolHelper = require('./helper/tool.js')();
 
 //lib
+var credentialsToObfuscate = [
+    process.env.GITHUB_PASSWORD,
+    process.env.GITHUB_ACCESS_TOKEN
+];
 var logger = require('../lib/logger.js')();
+logger.setCredentialsToObfuscate(credentialsToObfuscate);
+
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
 
 toolHelper.setStaticArgs(
     ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
-    ' --github-password="'+process.env.GITHUB_PASSWORD+'"');
+    ' --github-password="'+process.env.GITHUB_PASSWORD+'"'+
+    ' --obfuscate-credentials="'+credentialsToObfuscate.join(' ')+'"');
 
 describe("A spec for removing plugins", function() {
 
@@ -69,7 +76,7 @@ describe("A spec for removing plugins", function() {
             'cordova-plugin-geolocation'
 
         ], function(results){
-            toolHelper.run('--remove-all --save', function(err, stdout, stderr, output){
+            toolHelper.run('--remove-all', function(err, stdout, stderr, output){
                 expect(stdout).toContain("Successfully removed all installed plugins");
                 fileHelper.listPlugins(function(plugins){
                     expect(plugins).toEqual({});
