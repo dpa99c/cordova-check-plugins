@@ -9,7 +9,7 @@ before_install:
 before_script:
 - cordova create tmp
 - mv tmp/* .
-- rmdir tmp
+- rm -Rf tmp
 - cordova platform add ios
 script:
 - npm test
