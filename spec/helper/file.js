@@ -69,17 +69,17 @@ var fileHelper = (function(){
         },
         removePluginsDir: function(){
             fileHelper.rmdirRfSync(path.resolve('plugins'));
-            logger.log("Removed plugins/");
+            logger.verbose("Removed plugins/");
         },
         restoreConfigXml: function(){
             fs.copySync(path.resolve('spec/config.xml'), path.resolve('./config.xml'));
-            logger.log("Restored original config.xml");
+            logger.verbose("Restored original config.xml");
         },
         reset: function(onFinish){
             fileHelper.removeAllPlugins(function(){
                 fileHelper.removePluginsDir();
                 fileHelper.restoreConfigXml();
-                logger.log("Reset complete");
+                logger.verbose("Reset complete");
                 onFinish();
             });
         },
@@ -88,12 +88,12 @@ var fileHelper = (function(){
             
             var _resetPlatforms; _resetPlatforms = function(){
                 if(platforms.length === 0){
-                    logger.log("Platforms reset");
+                    logger.verbose("Platforms reset");
                     return onFinish();
                 }
                 var platform = platforms.pop();
                 exec("cordova platform rm "+platform+" && cordova platform add "+platform, function(err, stdout, stderr) {
-                    logger.log("Platform reset: "+platform);
+                    logger.verbose("Platform reset: "+platform);
                     _resetPlatforms();
                 });
             };
@@ -115,7 +115,7 @@ var fileHelper = (function(){
                 }
             }
 
-            logger.log("Adding plugin: '"+command+"'");
+            logger.verbose("Adding plugin: '"+command+"'");
             exec(command, function(err, stdout, stderr) {
                 if(err){
                     return onFinish(-1, stdout, stderr);
@@ -145,7 +145,7 @@ var fileHelper = (function(){
                 command += ' --nosave';
             }
 
-            logger.log("Removing plugin: '"+command+"'");
+            logger.verbose("Removing plugin: '"+command+"'");
             exec(command, function(err, stdout, stderr) {
                 if(err){
                     return onFinish(-1, stdout, stderr);

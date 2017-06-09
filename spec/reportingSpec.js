@@ -9,6 +9,7 @@ var fs = require('fs');
 // helper
 var fileHelper = require('./helper/file.js')();
 var toolHelper = require('./helper/tool.js')();
+var reporter = require('./helper/reporter.js');
 
 //lib
 var credentialsToObfuscate = [

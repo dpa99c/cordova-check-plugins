@@ -33,12 +33,11 @@ var toolHelper = (function(){
         staticArgs = args;
     };
 
-
     toolHelper.run = function(args, onFinish){
         args = args || '';
         var target = args.match('target=config') ? 'config' : 'remote';
         var command = "node index.js " + args + ' ' + staticArgs;
-        logger.log("Running tool: "+command);
+        logger.verbose("Running tool: "+command);
         exec(command, function(err, stdout, stderr) {
             if(err){
                 return onFinish(-1, stdout, stderr);
@@ -90,6 +89,27 @@ var toolHelper = (function(){
         }
         return result;
     };
+
+    toolHelper.waitForCondition = function(conditionFn, callbackFn, opts){
+        opts = opts || {};
+        opts.timeout = opts.timeout || 5000;
+        opts.interval = opts.interval || 100;
+
+        var elapsed = 0;
+        var checkCondition ; checkCondition  = function(){
+            if(conditionFn){
+                callbackFn();
+            }else if(elapsed >= opts.interval){
+                throw "Timed out waiting for conditionFn";
+            }else{
+                elapsed += opts.interval;
+                setTimeout(checkCondition, opts.interval);
+            }
+        };
+
+
+    };
+
     return toolHelper;
 })();
 

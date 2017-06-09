@@ -9,6 +9,7 @@ var fs = require('fs');
 // helper
 var fileHelper = require('./helper/file.js')();
 var toolHelper = require('./helper/tool.js')();
+var reporter = require('./helper/reporter.js');
 
 //lib
 var credentialsToObfuscate = [
@@ -60,7 +61,6 @@ describe("A spec for plugin source format", function() {
             });
         }));
     });
-
 
     // Plugin sources
     it("should handle plugin sources in the format 'cordova-plugin-camera'", function() {
