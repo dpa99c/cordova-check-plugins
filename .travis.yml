@@ -4,8 +4,6 @@ language: objective-c
 sudo: false
 notifications:
   email: false
-before_install:
-- npm install -g cordova@7.0.1
 before_script:
 - cordova create tmp
 - mv tmp/* .
