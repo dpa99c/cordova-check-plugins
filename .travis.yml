@@ -10,5 +10,5 @@ before_script:
 - rm -Rf tmp
 - cordova platform add ios
 script:
-- npm test
+- npm run-script test
 
