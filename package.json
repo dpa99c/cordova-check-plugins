@@ -55,19 +55,5 @@
     "scripts": {
         "test": "npm install && npm run-script jshint && jasmine",
         "jshint": "jshint index.js lib spec"
-    },
-    "cordova": {
-        "plugins": {
-            "cordova-plugin-camera": {},
-            "cordova.plugins.diagnostic": {},
-            "cordova-plugin-file": {
-                "FOO": "bar"
-            },
-            "cordova-plugin-geolocation": {},
-            "cordova-plugin-file-transfer": {}
-        },
-        "platforms": [
-            "android"
-        ]
     }
 }

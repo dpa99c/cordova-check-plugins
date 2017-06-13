@@ -12,5 +12,5 @@ before_script:
 - rm -Rf tmp
 - cordova platform add ios
 script:
-- npm run-script test
+- npm install && jshint index.js lib spec && jasmine
 
