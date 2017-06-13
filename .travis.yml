@@ -8,9 +8,10 @@ before_install:
 - npm install -g cordova@
 before_script:
 - cordova create tmp
+- rm tmp/package.json
 - mv tmp/* .
 - rm -Rf tmp
 - cordova platform add ios
 script:
-- npm install && jshint index.js lib spec && jasmine
+- npm run-script test
 
