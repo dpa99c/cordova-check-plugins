@@ -5,7 +5,7 @@ sudo: false
 notifications:
   email: false
 before_install:
-- npm install -g cordova@
+- npm install -g cordova
 before_script:
 - cordova create tmp
 - rm tmp/package.json
