@@ -205,6 +205,7 @@ function displayResults(){
             unconstrainVersions: unconstrainVersions,
             save: cliArgs["save"],
             force: cliArgs["force"] || cliArgs["force-update"],
+            nofetch: cliArgs["nofetch"],
             target: target,
             allowDowndate: cliArgs["allow-downdate"]
         });

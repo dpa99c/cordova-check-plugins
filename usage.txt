@@ -34,5 +34,6 @@ version.
     --allow-downdate ...... If the installed plugin version is newer than the version specified in the config.xml, allow the plugin to be downgraded to the version specified in the config.xml. Only applies if --target=config is set.
     --remove-all ...... Removes all installed plugins from the project. If --save is also specified, entries will also be removed from config.xml.
     --obfuscate-credentials ...... A space-separated list of credentials to obfuscate when logging output to the console. This is useful if your plugin source URLs contain sensitive credentials such as passwords or access tokens that you don't want to appear in console output from the tool. Any credentials specified here will be replaced with {obfuscated} in the console output.
+    --nofetch ...... If using cordova@7+, forces Cordova CLI to use legacy `git clone` mechanism when installing plugins, rather than the default `npm install` method. Only applies when updating plugins.
 
 For more details see the Github page: http://github.com/dpa99c/cordova-check-plugins

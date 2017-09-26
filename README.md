@@ -163,7 +163,8 @@ This is the same as doing `cordova plugin add cordova-plugin-foo --save` when ad
 
 ### --github-username and --github-password
 
-Allows specification of user credentials for GitHub, increasing API request limit to 5000 requests/hour.
+Allows specification of user credentials for GitHub, increasing API request limit to 5000 requests/hour. 
+Also enables access to private repos.
 
 When checking remote versions for that are hosted on GitHub, by default unauthenticated access to the GitHub API is used.
 This is [rate limited](https://developer.github.com/v3/#rate-limiting) to 60 requests/hour.
@@ -206,6 +207,14 @@ This option is exclusive and the default behaviour of checking for plugin update
 A space-separated list of credentials to obfuscate when logging output to the console. 
 This is useful if your plugin source URLs contain sensitive credentials such as passwords or access tokens that you don't want to appear in console output from the tool. 
 Any credentials specified here will be replaced with {obfuscated} in the console output.
+
+### --nofetch
+
+    $ cordova-check-plugins --update=auto --nofetch
+    
+If using `cordova@7+`, forces Cordova CLI to use legacy `git clone` mechanism when installing plugins, rather than the default `npm install` method. 
+Only applies when updating plugins.
+See the [Cordova 7 release notes](https://cordova.apache.org/news/2017/05/04/cordova-7.html) for more details.
 
 # Supported plugin sources
 
