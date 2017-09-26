@@ -36,7 +36,7 @@ describe("A spec for plugin source format", function() {
                 'cordova-plugin-camera',
                 'cordova-plugin-geolocation@*',
                 'uk.co.workingedge.phonegap.plugin.launchnavigator@2',
-                'cordova-plugin-file@4.0.0',
+                'cordova-plugin-file@3.0.0',
                 'cordova.plugins.diagnostic@~2.0.0',
                 'cordova-plugin-device-orientation@^1.0.0',
                 'https://github.com/apache/cordova-plugin-network-information',
@@ -71,7 +71,7 @@ describe("A spec for plugin source format", function() {
         expect(output.section.upToDate['cordova-plugin-geolocation']).toBeDefined();
     });
 
-    it("should handle plugin sources in the format 'cordova-plugin-file@4.0.0'", function() {
+    it("should handle plugin sources in the format 'cordova-plugin-file@3.0.0'", function() {
         expect(output.section.upToDate['cordova-plugin-file']).toBeDefined();
     });
 
