@@ -92,7 +92,6 @@ describe("A spec for CLI options", function() {
         });
     });
 
-
     it("should use the specified Github user credentials when the '--github-username' and '--github-password' CLI options are supplied", function(done) {
         fileHelper.addPlugin('https://github.com/apache/cordova-plugin-network-information', function(err, stdout, stderr){
             toolHelper.run(
@@ -104,6 +103,24 @@ describe("A spec for CLI options", function() {
                     done();
                 }
             );
+        });
+    });
+
+    it("should execute from the specified directory when '--cwd' specifies a valid directory", function(done) {
+        toolHelper.run('--cwd=..', function(err, stdout, stderr){
+            expect(err).toBeFalsy();
+            expect(stderr).toBeFalsy();
+            done();
+        }, {
+            cwd: 'spec'
+        });
+    });
+
+    it("should raise an error when '--cwd' specifies an invalid directory", function(done) {
+        toolHelper.run('--cwd=invalid', function(err, stdout, stderr){
+            expect(err).toBeTruthy();
+            expect(stdout).toContain('The path specified with --cwd could not be resolved');
+            done();
         });
     });
 });

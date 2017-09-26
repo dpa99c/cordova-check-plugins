@@ -43,10 +43,17 @@ var updateMode = null;
 var plugins = {};
 var cliArgs,
     pluginCount,
-    target;
+    target,
+    cwd = '';
 
 function start(){
-  readJson();
+    cwd = path.resolve(cwd);
+    if(!fs.existsSync(cwd)) {
+        errorHandler.handleFatalError("The path specified with --cwd could not be resolved: " + cwd);
+    }
+    logger.verbose("cwd is: " + cwd);
+    local.cwd = cwd;
+    readJson();
 }
 
 function readJson(){
@@ -56,7 +63,7 @@ function readJson(){
     local.readFetchJson(function(err, json){
         try{
             if(err){
-                errorHandler.handleFatalError( "Failed to read plugins/fetch.json - ensure you're running this command from the root of a Cordova project.\n\n"+err);
+                errorHandler.handleFatalError( "Failed to read plugins/fetch.json - ensure you're running this command from the root of, or have specified the path using --cwd to, a valid Cordova project.\n\n"+err);
             }
             pluginCount = 0;
             for(var id in json){
@@ -76,7 +83,7 @@ function readJson(){
 
 function getInstalledVersions(){
     logger.verbose("Reading installed plugin versions");
-    var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(local.PLUGINS_DIR);
+    var installedPlugins = pluginInfoProvider.getAllWithinSearchPath(path.resolve(cwd, local.PLUGINS_DIR));
 
     installedPlugins.forEach(function(plugin){
         if(plugins[plugin.id]){
@@ -101,7 +108,8 @@ function getTargetVersions(){
         plugins: plugins, 
         onFinish: displayResults,
         pluginCount: pluginCount,
-        unconstrainVersions: unconstrainVersions
+        unconstrainVersions: unconstrainVersions,
+        cwd: cwd
     });
 }
 
@@ -207,7 +215,8 @@ function displayResults(){
             force: cliArgs["force"] || cliArgs["force-update"],
             nofetch: cliArgs["nofetch"],
             target: target,
-            allowDowndate: cliArgs["allow-downdate"]
+            allowDowndate: cliArgs["allow-downdate"],
+            cwd: cwd
         });
     }
 }
@@ -313,6 +322,9 @@ function run(){
         }
         if(cliArgs["update"]){
             updateMode = cliArgs["update"];
+        }
+        if(cliArgs["cwd"]){
+            cwd = cliArgs["cwd"];
         }
 
         target = cliArgs["target"] === "config" ? "config" : "remote";

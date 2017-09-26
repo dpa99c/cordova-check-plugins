@@ -26,6 +26,8 @@ A CLI tool to check for / manage plugin updates in Cordova/Phonegap projects.
     - [--allow-downdate](#--allow-downdate)
     - [--remove-all](#--remove-all)
     - [--obfuscate-credentials](#--obfuscate-credentials)
+    - [--nofetch](#--nofetch)
+    - [--cwd](#--cwd)
 - [Supported plugin sources](#supported-plugin-sources)
 - [Integration with Cordova CLI](#integration-with-cordova-cli)
 - [License](#license)
@@ -216,6 +218,13 @@ If using `cordova@7+`, forces Cordova CLI to use legacy `git clone` mechanism wh
 Only applies when updating plugins.
 See the [Cordova 7 release notes](https://cordova.apache.org/news/2017/05/04/cordova-7.html) for more details.
 
+### --cwd
+
+    $ cordova-check-plugins --cwd=/path/to/project
+    
+Sets the directory from which the tool should be executed.
+If not specified, defaults to the directory from which the `cordova-check-plugins` command is executed.
+
 # Supported plugin sources
 
 - Plugins installed via the npm registry (with optionally specified versions)
@@ -231,6 +240,7 @@ For example:
     cordova-plugin-inappbrowser@~1.1.1
     cordova-plugin-device@^1.0.0
     https://github.com/apache/cordova-plugin-battery-status
+    cordova-plugin-battery-status@https://github.com/apache/cordova-plugin-battery-status   <-- cordova@7 syntax 
     https://github.com/apache/cordova-plugin-battery-status#r1.0.0
     git://github.com/apache/cordova-plugin-battery-status.git#r1.0.0
     https://username:password@github.com/apache/cordova-plugin-battery-status

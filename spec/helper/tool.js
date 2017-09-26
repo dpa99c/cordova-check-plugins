@@ -33,12 +33,16 @@ var toolHelper = (function(){
         staticArgs = args;
     };
 
-    toolHelper.run = function(args, onFinish){
+    toolHelper.run = function(args, onFinish, opts){
         args = args || '';
+        opts = opts || {};
+
         var target = args.match('target=config') ? 'config' : 'remote';
-        var command = "node index.js " + args + ' ' + staticArgs;
+        var script = path.resolve("index.js");
+        var command = "node " + script + " " + args + ' ' + staticArgs;
+
         logger.verbose("Running tool: "+command);
-        exec(command, function(err, stdout, stderr) {
+        exec(command, {cwd: path.resolve(opts.cwd || '')}, function(err, stdout, stderr) {
             if(err){
                 return onFinish(-1, stdout, stderr);
             }
