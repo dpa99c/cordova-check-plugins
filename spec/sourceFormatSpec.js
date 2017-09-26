@@ -19,7 +19,7 @@ var credentialsToObfuscate = [
 var logger = require('../lib/logger.js')();
 logger.setCredentialsToObfuscate(credentialsToObfuscate);
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 240000;
 
 toolHelper.setStaticArgs(
     ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
