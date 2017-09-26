@@ -233,9 +233,13 @@ function getPluginSnippet(id, source, installedVersion, targetVersion, error){
     if(!source){
         source = "N/A";
     }else if(source.type === "git"){
-        source = source.url;
+        source = remote.normalizeGithubSource(source);
     }else if(source.type === "registry"){
-        source = "npm://"+source.id;
+        if(source.id.match(remote.GITHUB_REGEX)){
+            source = remote.normalizeGithubSource(source);
+        }else{
+            source = "npm://"+source.id;
+        }
     }else if(source.type === "local"){
         source = source.path;
     }else{
@@ -256,6 +260,10 @@ function getPluginSnippet(id, source, installedVersion, targetVersion, error){
         }else{
             targetVersion += " - check "+target+" source is valid";
         }
+    }
+
+    if(targetVersion.match(remote.GITHUB_REGEX)){
+        targetVersion = remote.normalizeGithubURL(targetVersion);
     }
 
     var snippet =  "plugin: "+id+

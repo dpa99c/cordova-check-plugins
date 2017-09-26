@@ -26,15 +26,13 @@
         "cli-spinner": "0.2.4",
         "cli-status": "0.1.1",
         "colors": "1.1.2",
-        "cordova": "^6.5.0",
+        "cordova": "^7.0.1",
         "cordova-android": "^6.2.3",
         "cordova-common": "1.0.0",
         "cordova-plugin-camera": "^2.4.1",
-        "cordova-plugin-compat": "^1.1.0",
-        "cordova-plugin-file": "^4.0.0",
-        "cordova-plugin-file-transfer": "^1.6.3",
-        "cordova-plugin-geolocation": "^2.0.0",
-        "cordova.plugins.diagnostic": "^3.6.5",
+        "cordova-plugin-compat": "^1.0.0",
+        "cordova-plugin-file": "^4.3.3",
+        "cordova.plugins.diagnostic": "^3.6.7",
         "fs-extra": "0.26.5",
         "inquirer": "0.12.0",
         "jasmine-spec-reporter": "^4.1.0",
@@ -55,5 +53,15 @@
     "scripts": {
         "test": "npm install && npm run-script jshint && jasmine",
         "jshint": "jshint index.js lib spec"
+    },
+    "cordova": {
+        "platforms": [
+            "android"
+        ],
+        "plugins": {
+            "cordova-plugin-camera": {},
+            "cordova.plugins.diagnostic": {},
+            "cordova-plugin-file": {}
+        }
     }
 }
