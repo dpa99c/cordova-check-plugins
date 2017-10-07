@@ -8,9 +8,10 @@ require('mock-stdin').stdin();
  var toolHelper = require('spec/helper/tool.js')();
  var logger = require('lib/logger.js')();
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
+ jasmine.DEFAULT_TIMEOUT_INTERVAL = 240000;
 
 toolHelper.setStaticArgs(
+ ' --nospinner'+
  ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
  ' --github-password="'+process.env.GITHUB_PASSWORD+'"');
 

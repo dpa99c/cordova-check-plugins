@@ -75,10 +75,15 @@ var fileHelper = (function(){
             fs.copySync(path.resolve('spec/config.xml'), path.resolve('./config.xml'));
             logger.verbose("Restored original config.xml");
         },
+        restorePackageJson: function(){
+            fs.copySync(path.resolve('spec/package.json'), path.resolve('./package.json'));
+            logger.verbose("Restored original package.json");
+        },
         reset: function(onFinish){
             fileHelper.removeAllPlugins(function(){
                 fileHelper.removePluginsDir();
                 fileHelper.restoreConfigXml();
+                fileHelper.restorePackageJson();
                 logger.verbose("Reset complete");
                 onFinish();
             });
@@ -182,12 +187,29 @@ var fileHelper = (function(){
         writeFetchJson: function(fileContents){
             fs.writeFileSync(path.resolve('./plugins/fetch.json'), JSON.stringify(fileContents), 'utf-8');
         },
-        forceLocalPluginVersion: function(pluginId, version){
-            var fileContents = fs.readFileSync(path.resolve('./plugins/'+pluginId+'/plugin.xml'), 'utf-8');
-            var plugin_orig = fileContents.match(/<plugin(?: )*([^>]+)>/)[0];
-            var plugin_new = plugin_orig.replace(/version="[^"]+"/, 'version="'+version+'"');
-            fileContents = fileContents.replace(plugin_orig, plugin_new);
-            fs.writeFileSync(path.resolve('./plugins/'+pluginId+'/plugin.xml'), fileContents, 'utf-8');
+        readPackageJson: function(dir){
+            dir = dir || '.';
+            var fileContents = fs.readFileSync(path.resolve(dir + '/package.json'), 'utf-8');
+            return JSON.parse(fileContents);
+        },
+        writePackageJson: function(fileContents, dir){
+            dir = dir || '.';
+            fs.writeFileSync(path.resolve(dir + '/package.json'), JSON.stringify(fileContents), 'utf-8');
+        },
+        setPluginInProjectPackageJson: function(pluginId, version, add){
+            var packageJson = fileHelper.readPackageJson();
+            var dependencies = packageJson.dependencies || {};
+            if(dependencies[pluginId] || add){
+                dependencies[pluginId] = version;
+                packageJson.dependencies = dependencies;
+
+                var cordova = packageJson.cordova || {};
+                var plugins = cordova.plugins || {};
+                plugins[pluginId] = {};
+                cordova.plugins = plugins;
+                packageJson.cordova = cordova;
+                fileHelper.writePackageJson(packageJson);
+            }
         },
         readConfigXml: function(){
           return fs.readFileSync(path.resolve('./config.xml'), 'utf-8');
@@ -195,11 +217,39 @@ var fileHelper = (function(){
         writeConfigXml: function(fileContents){
             fs.writeFileSync(path.resolve('./config.xml'), fileContents, 'utf-8');
         },
-        addPluginToConfigXml: function(name, spec){
+        setPluginInConfigXml: function(pluginId, version, add){
             var configXml = fileHelper.readConfigXml();
-            var tag = '<plugin name="'+name+'" spec="'+spec+'" />';
-            configXml = configXml.replace('</widget>', tag+'\n</widget>');
-            fileHelper.writeConfigXml(configXml);
+            var source = '<plugin name="'+pluginId+'" spec="[^"]+" />';
+            var target = '<plugin name="'+pluginId+'" spec="'+version+'" />';
+
+            if(configXml.match(source)){
+                configXml = configXml.replace(source, target);
+                fileHelper.writeConfigXml(configXml);
+            }else if(add){
+                configXml = configXml.replace('</widget>', target+'\n</widget>');
+                fileHelper.writeConfigXml(configXml);
+            }
+        },
+        forceLocalPluginVersion: function(pluginId, version) {
+            //plugin.xml
+            var fileContents = fs.readFileSync(path.resolve('./plugins/' + pluginId + '/plugin.xml'), 'utf-8');
+            var plugin_orig = fileContents.match(/<plugin(?: )*([^>]+)>/)[0];
+            var plugin_new = plugin_orig.replace(/version="[^"]+"/, 'version="' + version + '"');
+            fileContents = fileContents.replace(plugin_orig, plugin_new);
+            fs.writeFileSync(path.resolve('./plugins/' + pluginId + '/plugin.xml'), fileContents, 'utf-8');
+
+            //package.json
+            var packageJson = fileHelper.readPackageJson('./plugins/' + pluginId);
+            packageJson.version = version;
+            fileHelper.writePackageJson(packageJson, './plugins/' + pluginId);
+        },
+
+        addPluginToConfig: function(name, spec){
+            //config.xml
+            fileHelper.setPluginInConfigXml(name, spec, true);
+
+            //package.json
+            fileHelper.setPluginInProjectPackageJson(name, spec, true)
         }
     };
     return fileHelper;

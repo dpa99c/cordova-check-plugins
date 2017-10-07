@@ -95,7 +95,11 @@ function getInstalledVersions(){
     });
 
     if(cliArgs["remove-all"]){
-        update.removeAll(installedPlugins, true, cliArgs["save"]);
+        update.removeAll(installedPlugins, {
+            force: true,
+            save: cliArgs["save"],
+            cwd: cwd
+        });
     }else{
         getTargetVersions();
     }
@@ -325,6 +329,9 @@ function run(){
         }
         if(cliArgs["cwd"]){
             cwd = cliArgs["cwd"];
+        }
+        if(cliArgs["nospinner"]){
+            progress.disable();
         }
 
         target = cliArgs["target"] === "config" ? "config" : "remote";

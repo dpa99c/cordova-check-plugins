@@ -36,5 +36,6 @@ version.
     --obfuscate-credentials ...... A space-separated list of credentials to obfuscate when logging output to the console. This is useful if your plugin source URLs contain sensitive credentials such as passwords or access tokens that you don't want to appear in console output from the tool. Any credentials specified here will be replaced with {obfuscated} in the console output.
     --nofetch ...... If using cordova@7+, forces Cordova CLI to use legacy `git clone` mechanism when installing plugins, rather than the default `npm install` method. Only applies when updating plugins.
     --cwd ...... Sets the directory from which the tool should be executed. If not specified, defaults to the directory from which the `cordova-check-plugins` command is executed.
+    --nospinner ...... Turns off the CLI spinner which is used by default to indicate when an async operation is in progress.
 
 For more details see the Github page: http://github.com/dpa99c/cordova-check-plugins

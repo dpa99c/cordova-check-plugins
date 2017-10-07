@@ -28,6 +28,7 @@ A CLI tool to check for / manage plugin updates in Cordova/Phonegap projects.
     - [--obfuscate-credentials](#--obfuscate-credentials)
     - [--nofetch](#--nofetch)
     - [--cwd](#--cwd)
+    - [--nospinner](#--nospinner)
 - [Supported plugin sources](#supported-plugin-sources)
 - [Integration with Cordova CLI](#integration-with-cordova-cli)
 - [License](#license)
@@ -224,6 +225,14 @@ See the [Cordova 7 release notes](https://cordova.apache.org/news/2017/05/04/cor
     
 Sets the directory from which the tool should be executed.
 If not specified, defaults to the directory from which the `cordova-check-plugins` command is executed.
+
+### --nospinner
+
+    $ cordova-check-plugins --nospinner
+
+Turns off the [CLI spinner](https://www.npmjs.com/package/cli-spinner) which is used by default to indicate when an async operation is in progress.
+    
+If you're capturing the output of this command to a log (e.g. in a CI environment), then this spinner pollutes the log with unnecessary junk, so turning it off makes for a more readable log.
 
 # Supported plugin sources
 

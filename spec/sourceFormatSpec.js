@@ -22,6 +22,7 @@ logger.setCredentialsToObfuscate(credentialsToObfuscate);
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 240000;
 
 toolHelper.setStaticArgs(
+    ' --nospinner'+
     ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
     ' --github-password="'+process.env.GITHUB_PASSWORD+'"'+
     ' --obfuscate-credentials="'+credentialsToObfuscate.join(' ')+'"');

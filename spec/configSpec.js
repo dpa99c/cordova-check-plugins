@@ -22,9 +22,10 @@ logger.setCredentialsToObfuscate(credentialsToObfuscate);
 // 3rd party
 var semver = require('semver');
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 120000;
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 240000;
 
 toolHelper.setStaticArgs(
+    ' --nospinner'+
     ' --github-username="'+process.env.GITHUB_USERNAME+'"'+
     ' --github-password="'+process.env.GITHUB_PASSWORD+'"'+
     ' --obfuscate-credentials="'+credentialsToObfuscate.join(' ')+'"');
@@ -50,7 +51,7 @@ describe("A spec for targeting config.xml", function() {
             ], function(results){
                 fileHelper.forceLocalPluginVersion('cordova-plugin-geolocation', '2.0.0'); // newer installed
                 fileHelper.forceLocalPluginVersion('cordova.plugins.diagnostic', '2.0.0'); // newer config
-                fileHelper.addPluginToConfigXml('cordova-plugin-device', '~1.1.3'); // new config
+                fileHelper.addPluginToConfig('cordova-plugin-device', '~1.1.3'); // new config
                 toolHelper.run('--target=config', function(err, stdout, stderr, output){
 
                     expect(output.section.upToDate['cordova-plugin-camera']).toBeDefined();
@@ -155,8 +156,8 @@ describe("A spec for targeting config.xml", function() {
                  function(results){
 
                      fileHelper.forceLocalPluginVersion('cordova-plugin-geolocation', '1.0.0'); // newer config
-                     fileHelper.addPluginToConfigXml('cordova-plugin-device', '~100.0.0'); // invalid npm version
-                     fileHelper.addPluginToConfigXml('cordova.plugins.diagnostic', 'https://github.com/invalid_user/cordova-diagnostic-plugin'); // invalid git repo
+                     fileHelper.addPluginToConfig('cordova-plugin-device', '~100.0.0'); // invalid npm version
+                     fileHelper.addPluginToConfig('cordova.plugins.diagnostic', 'https://github.com/invalid_user/cordova-diagnostic-plugin'); // invalid git repo
                      
                      toolHelper.run('--target=config --update=auto', function(err, stdout, stderr, output){
                          expect(err).toBeFalsy();
