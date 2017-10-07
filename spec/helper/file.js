@@ -249,7 +249,7 @@ var fileHelper = (function(){
             fileHelper.setPluginInConfigXml(name, spec, true);
 
             //package.json
-            fileHelper.setPluginInProjectPackageJson(name, spec, true)
+            fileHelper.setPluginInProjectPackageJson(name, spec, true);
         }
     };
     return fileHelper;
