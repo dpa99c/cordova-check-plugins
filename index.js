@@ -63,7 +63,8 @@ function readJson(){
     local.readFetchJson(function(err, json){
         try{
             if(err){
-                errorHandler.handleFatalError( "Failed to read plugins/fetch.json - ensure you're running this command from the root of, or have specified the path using --cwd to, a valid Cordova project.\n\n"+err);
+                logger.warn( "Failed to read plugins/fetch.json - ensure you're running this command from the root of, or have specified the path using --cwd to, a valid Cordova project.\n\n"+err);
+                return getInstalledVersions();
             }
             pluginCount = 0;
             for(var id in json){
