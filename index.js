@@ -98,7 +98,7 @@ function getInstalledVersions(){
     if(cliArgs["remove-all"]){
         update.removeAll(installedPlugins, {
             force: true,
-            save: cliArgs["save"],
+            nosave: cliArgs["nosave"],
             cwd: cwd
         });
     }else{
@@ -216,7 +216,7 @@ function displayResults(){
         update.doUpdate(plugins, pluginsForUpdate, {
             updateMode: updateMode,
             unconstrainVersions: unconstrainVersions,
-            save: cliArgs["save"],
+            nosave: cliArgs["nosave"],
             force: cliArgs["force"] || cliArgs["force-update"],
             nofetch: cliArgs["nofetch"],
             target: target,

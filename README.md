@@ -20,7 +20,7 @@ A CLI tool to check for / manage plugin updates in Cordova/Phonegap projects.
     - [--update={mode|pluginIds}](#--updatemodepluginids)
     - [--unconstrain-versions](#--unconstrain-versions)
     - [--force, --force-update](#--force---force-update)
-    - [--save](#--save)
+    - [--nosave](#--nosave)
     - [--github-username and --github-password](#--github-username-and---github-password)
     - [--target](#--target)
     - [--allow-downdate](#--allow-downdate)
@@ -155,14 +155,13 @@ Without it, only the "parent" plugin - in this case `cordova-plugin-file-transfe
 
     $ cordova-check-plugins --update=auto --force
 
-### --save
+### --nosave
 
-Save changes to the config.xml when updating/removing plugins.
-The new version number of the updated plugin will be saved in a `<plugin>` tag.
-This is the same as doing `cordova plugin add cordova-plugin-foo --save` when adding a plugin manually.
+Omits saving changes when updating plugins.
+By default (if this argument is omitted), when updating plugins, changes will be saved to config.xml and package.json.
 
-    $ cordova-check-plugins --update=auto --force-update --save
-    $ cordova-check-plugins --remove-all --save
+    $ cordova-check-plugins --update=auto --force-update --nosave
+    $ cordova-check-plugins --remove-all --nosave
 
 ### --github-username and --github-password
 

@@ -53,13 +53,13 @@ describe("A spec for removing plugins", function() {
         });
     });
 
-    it("should remove all <plugin> entries from the config.xml when the --save CLI argument is specified with --remove-all", function(done) {
+    it("should remove all <plugin> entries from the config.xml when the --nosave CLI argument is NOT specified with --remove-all", function(done) {
         fileHelper.addPlugins([
             'cordova-plugin-file-transfer',
             'cordova-plugin-geolocation'
 
         ], function(results){
-            toolHelper.run('--remove-all --save', function(err, stdout, stderr, output){
+            toolHelper.run('--remove-all', function(err, stdout, stderr, output){
                 expect(stdout).toContain("Successfully removed all installed plugins");
                 fileHelper.listPlugins(function(plugins){
                     expect(plugins).toEqual({});
@@ -72,13 +72,13 @@ describe("A spec for removing plugins", function() {
         });
     });
 
-    it("should NOT remove <plugin> entries from the config.xml when the --save CLI argument is NOT specified with --remove-all", function(done) {
+    it("should NOT remove <plugin> entries from the config.xml when the --nosave CLI argument is specified with --remove-all", function(done) {
         fileHelper.addPlugins([
             'cordova-plugin-file-transfer',
             'cordova-plugin-geolocation'
 
         ], function(results){
-            toolHelper.run('--remove-all', function(err, stdout, stderr, output){
+            toolHelper.run('--remove-all --nosave', function(err, stdout, stderr, output){
                 expect(stdout).toContain("Successfully removed all installed plugins");
                 fileHelper.listPlugins(function(plugins){
                     expect(plugins).toEqual({});

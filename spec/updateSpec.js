@@ -37,22 +37,22 @@ describe("A spec for updating plugins", function() {
         fileHelper.reset(done);
     });
 
-    it("should save update changes to the config.xml when the '--save' CLI option is supplied", function(done) {
+    it("should save update changes to the config.xml when the '--nosave' CLI option is NOT supplied", function(done) {
         fileHelper.addPlugin('cordova-plugin-file', function(err, stdout, stderr){
             fileHelper.forceLocalPluginVersion('cordova-plugin-file', '1.0.0');
             expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeFalsy();
-            toolHelper.run('--update=cordova-plugin-file --save', function(err, stdout, stderr, output){
+            toolHelper.run('--update=cordova-plugin-file', function(err, stdout, stderr, output){
                 expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeTruthy();
                 done();
             });
         });
     });
 
-    it("should NOT save update changes to the config.xml when the '--save' CLI option is NOT supplied", function(done) {
+    it("should NOT save update changes to the config.xml when the '--nosave' CLI option is supplied", function(done) {
         fileHelper.addPlugin('cordova-plugin-file', function(err, stdout, stderr){
             fileHelper.forceLocalPluginVersion('cordova-plugin-file', '1.0.0');
             expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeFalsy();
-            toolHelper.run('--update=cordova-plugin-file', function(err, stdout, stderr, output){
+            toolHelper.run('--update=cordova-plugin-file --nosave', function(err, stdout, stderr, output){
                 expect(fileHelper.readConfigXml().match('<plugin name="cordova-plugin-file"')).toBeFalsy();
                 done();
             });
