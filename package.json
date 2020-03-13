@@ -34,7 +34,7 @@
         "js-base64": "2.1.9",
         "jsonfile": "2.2.3",
         "lodash": "4.16.4",
-        "minimist": "1.2.0",
+        "minimist": "1.2.5",
         "octonode": "0.7.4",
         "plugman": "1.3.0",
         "semver": "5.1.0",
