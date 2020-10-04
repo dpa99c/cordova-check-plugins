@@ -15,6 +15,7 @@ var errorHandler = require('./lib/errorHandler.js')();
 var progress = require('./lib/progress.js')();
 var cliArgs = require('./lib/cliArgs.js')().args;
 var config = require('./lib/config.js')();
+var packageReader = require('./lib/packageReader.js')();
 var remote = require('./lib/remote.js')();
 var local = require('./lib/local.js')();
 
@@ -109,6 +110,7 @@ function getInstalledVersions(){
 
 function getTargetVersions(){
     var targetModule = target === "config" ? config : remote;
+    targetModule = target === "package" ? packageReader : targetModule;
     targetModule.check({
         plugins: plugins, 
         onFinish: displayResults,
@@ -118,7 +120,8 @@ function getTargetVersions(){
     });
 }
 
-function displayResults(){
+function displayResults(target){
+    if ( !target) { target = 'config.xml'; }
     var pluginsForUpdate = [];
 
     // Up-to-date (verbose)
@@ -155,7 +158,7 @@ function displayResults(){
         return plugin.status === "new-installed";
     });
     if(newInstalled.length > 0){
-        logger.log(getTitle("Locally installed plugins not in config.xml").yellow);
+        logger.log(getTitle("Locally installed plugins not in " + target).yellow);
         newInstalled.forEach(function(plugin){
             logger.log(getPluginSnippet(plugin.id, plugin.source, plugin.installed, plugin.target).yellow);
         });
@@ -335,7 +338,7 @@ function run(){
             progress.disable();
         }
 
-        target = cliArgs["target"] === "config" ? "config" : "remote";
+        target = cliArgs["target"];
 
         start();
     }catch(e){
